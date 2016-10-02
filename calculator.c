@@ -5,7 +5,7 @@
 #include "stack.h"
 #include <math.h>
   
-int lflag = 0, dflag = 0, stackfull = 0;
+int lflag = 0, dflag = 0, stackfull = 0, error = 0;
 
 int readline(char *arr, int len) {
 	int i = 0;
@@ -24,36 +24,53 @@ int readline(char *arr, int len) {
 #define ERROR	40
 typedef struct token {
 	int type;
-	long double number;
+	num number;
 	char op;
 }token;
 
-
+//printf("");getchar();
 
 enum states { SPC, DIG, OPR, ALPH, STOP, ERR };
+
 token *getnext(char *arr, int *reset) {
 	static int currstate = SPC;
 	int nextstate;
+	int d1flag = 0; 
 	static int i = 0;
-	static long double bd, ad;
 	if(*reset == 1) {
 		i = 0;
 		currstate = SPC;
 		*reset = 0;
 	}
-	
-	char *expre = (char *)malloc(sizeof(char) * 7);
+	num a;
+	a.ai = 0;
+	a.bi = 0;
+	a.sign = 0;
 	char ope(char*);
-	int x, flag = 0;
+	int x;
+	char *expre;
 	token *t = (token *)malloc(sizeof(token));
 	if(currstate == ALPH) {
+		expre = (char *)malloc(sizeof(char) * 7);
 		x = 0;
 		*(expre + x) = arr[i - 1];
 		x++;
 	}
-	if(arr[i] == '.') {
+	if(arr[i - 1] == '.') {
 		dflag = 1;
+		d1flag = 1;
 	}
+	if(currstate == DIG) {
+		if(d1flag == 1) {
+			a.ad[a.ai] = arr[i - 1];
+			a.ai++;
+		}
+		else {
+			a.bd[a.bi] = arr[i - 1];
+			a.bi++;
+		}
+	}
+	
 	while(1) {
 		switch(arr[i]) {
 			case '0': case '1': case '2': case '3':
@@ -87,8 +104,19 @@ token *getnext(char *arr, int *reset) {
 		}
 		switch(currstate) {
 			case SPC:
-				if(nextstate == DIG && arr[i] != '.')
-					bd = arr[i] - '0';	
+				if(arr[i] == '.') {
+					dflag = 1;
+					d1flag = 1;
+					break;
+				}
+				if(nextstate == DIG && d1flag != 1) {
+					a.bd[a.bi] = arr[i];
+					a.bi++;
+				}
+				else if(nextstate == DIG && d1flag == 1) {
+					a.ad[a.ai] = arr[i];
+					a.ai++;
+				}
 				else if(nextstate == ALPH) {
 					x = 0;
 					*(expre + x) = arr[i];
@@ -97,34 +125,33 @@ token *getnext(char *arr, int *reset) {
 				break;
 			case DIG:
 				if(arr[i] == '.') {
-				flag = 1;
-				break;
+					dflag = 1;
+					d1flag = 1;
+					break;
 				}
-				if(nextstate == DIG && flag != 1) 
-					bd = bd * 10 + arr[i] - '0';
-				else if(nextstate == DIG && flag == 1) {
-					ad = ad * 10 + arr[i] - '0';
+				if(nextstate == DIG && d1flag != 1) {
+					a.bd[a.bi] = arr[i];
+					a.bi++;
+				}
+				else if(nextstate == DIG && d1flag == 1) {
+					a.ad[a.ai] = arr[i];
+					a.ai++;
 				}	
-				else if(nextstate == ALPH) {
-					x = 0;
-					*(expre + x) = arr[i];
-					x++;
-				}
 				else  {
-					flag = 0;
-					while(((int)ad))
-						ad /= 10;
+					if(a.bi == 0) {
+						a.bd[a.bi] = '0';
+						a.bi++;
+					}
+					a.bd[a.bi] = '\0';
+					a.ad[a.ai] = '\0';
 					t->type = OPERAND;
-					t->number = bd + ad;
-					ad = 0;
+					t->number = a;
 					i++;
 					currstate = nextstate;
 					return t;
 				}
 				break;
 			case ALPH:
-				if(nextstate == DIG && arr[i] != '.')
-					bd = arr[i] - '0';
 				if(nextstate == ALPH) {
 					*(expre + x) = arr[i];
 					x++;
@@ -138,14 +165,13 @@ token *getnext(char *arr, int *reset) {
 						currstate = nextstate;
 						return t;
 					}
+					free(expre);
 					i++;
 					currstate = nextstate;
 					return t;
 				}
 				break;
 			case OPR:
-				if(nextstate == DIG && arr[i] != '.')
-					bd = arr[i] - '0';
 				t->type = OPERATOR;
 				t->op = arr[i - 1];	
 				currstate = nextstate;
@@ -155,7 +181,6 @@ token *getnext(char *arr, int *reset) {
 			case STOP:
 				t->type = END;
 				currstate = nextstate;
-				free(expre);
 				return t;
 				break;
 			case ERR:
@@ -206,12 +231,18 @@ char ope (char *expr) {
 		return 'p';
 	else if(strcmp(expr, "<=") == 0)
 		return 'q';
+	else if(strcmp(expr, "=") == 0)
+		return 'r';
 	else
 		return '1';
 }
 
 int precedence(char b) {
 	switch(b) {
+		case 'l': case 'm': case 'n': case 'o':
+		case 'p': case 'r': case 'q': 
+			return -1;
+			break;
 		case '(':
 			return 4;
 			break;
@@ -226,110 +257,699 @@ int precedence(char b) {
 			break;
 		case 'a': case 'b': case 'c': case 'd':
 		case 'e': case 'f': case 'g': case 'h':
-		case 'l': case 'k': case 'j': case 'i':
-		case 'm': case 'n': case 'o':		
+		case 'k': case 'j': case 'i':		
 			return 3;
-			break;
-		default:
-			return INT_MIN;
 			break;
 	}
 }
 
-long double solve(char op, long double x, long double y) {
+num add(num, num);
+num sub(num, num);
+num mul(num, num);
+num divi(num, num);
+num mod(num, num);
+
+num adz(num t, int i) {
+	if(i == 0)
+		return t; 
+	int j = t.bi;
+	while(j > -1)
+		t.bd[j + i] = t.bd[j--];
+	j = 0;
+	t.bi += i; 
+	while(j < i)
+		t.bd[j++] = '0';
+	return t;
+}
+
+num adza(num t, int i) {
+	int j = 0;
+	while(j < i)
+		t.ad[t.ai + j++] = '0';
+	t.ad[t.ai + i] = '\0';
+	t.ai += i;
+	return t;
+}
+
+num rmz(num t) {
+	int i = 0, j = 0;
+	while(t.bd[i] == '0')
+		i++;
+	if(i == 0)
+		return t;
+	while(t.bd[i + j - 1] != '\0') {
+		t.bd[j] = t.bd[i + j];
+		j++;
+	}
+	t.bi = j - 1;
+	return t;
+}
+
+num rmza(num t) {
+	int i = t.ai - 1, j = 0;
+	while(t.ad[i--] == '0')
+		j++;
+	if(j == 0)
+		return t;
+	t.ad[t.ai - j] = '\0';
+	t.ai -= j;
+	return t;
+}
+
+num add(num x, num y) {
+	if(x.sign != y.sign) {
+		if(x.sign == 1) {
+			x.sign = 0;
+			return sub(x, y);
+		}
+		else {
+			y.sign = 0;
+			return sub(y, x);
+		}
+	}
+	int i = 0;
+	if(x.ai >= y.ai) {
+		while(i < y.ai) {
+			x.ad[i] = x.ad[i] + y.ad[i] - '0';
+			i++;
+		}
+		i--;
+		while(i > 0) {
+			if(x.ad[i] > '9') {
+				x.ad[i - 1]++;
+				x.ad[i] -= 10;
+			}
+			i--;
+		}
+		if(x.ad[0] > '9') {
+			x.bd[x.bi - 1]++;
+			x.ad[0] -= 10;
+		}
+	}
+	else {
+		while(i < x.ai) {
+			y.ad[i] = x.ad[i] + y.ad[i] - '0';
+			i++;
+		}
+		i--;
+		while(i > 0) {
+			if(y.ad[i] > '9') {
+				y.ad[i - 1]++;
+				y.ad[i] -= 10;
+			}
+			i--;
+		}
+		if(y.ad[0] > '9') {
+			y.bd[x.bi - 1]++;
+			y.ad[0] -= 10;
+		}
+	}
+	if(x.bi > y.bi) {
+		i = x.bi - 1;
+		y = adz(y, x.bi - y.bi + 1);
+		while(i > -1) {
+			y.bd[i + 1] = y.bd[i + 1] + x.bd[i] - '0';
+			if(y.bd[i + 1] > '9') {
+				y.bd[i]++;
+				y.bd[i + 1] -= 10;
+			}
+			i--;
+		}
+		y = rmz(y);
+		y = rmza(y);
+		return y;
+	}
+	else {
+		i = y.bi - 1;
+		x = adz(x, y.bi - x.bi + 1);
+		while(i > -1) {
+			x.bd[i + 1] = x.bd[i + 1] + y.bd[i] - '0';
+			if(x.bd[i + 1] > '9') {
+				x.bd[i]++;
+				x.bd[i + 1] -= 10;
+			}
+			i--;
+		}
+		x = rmz(x);
+		x = rmza(x);
+		return x;
+	}
+}
+num sub(num x, num y) {
+	if(x.sign != y.sign) {
+		if(x.sign == 1) {
+			x.sign = 0;
+			return add(x, y);
+		}
+		else {
+			x.sign = 1;
+			return add(x, y);
+		}	
+	}
+	x = rmz(x);
+	y = rmz(y);
+	int i;
+	if(y.bi == x.bi) {
+		i = 0;
+		int flag = 0;
+		while(i < x.bi) {
+			if(x.bd[i] > y.bd[i]) {
+				flag = 2;
+				break;
+			}
+			else if(x.bd[i] < y.bd[i]) {
+				flag = 1;
+				break;
+			}
+			i++;
+		}
+		if(flag == 0) {
+			i = 0;
+			while(i < x.ai) {
+				if(x.ad[i] > y.ad[i]) {
+					flag = 2;
+					break;
+				}
+				else if(x.ad[i] < y.ad[i]) {
+					flag = 1;
+					break;
+				}
+				i++;
+			}	
+		}
+		if(flag == 0) {
+			y.ai=0;
+			y.bi=1;
+			y.sign = 0;
+			y.bd[0] = '0';
+			y.bd[1] = '\0';
+			y.ad[0] = '\0';
+			return y;
+		}
+		else if(flag == 1) {
+			i = x.ai - y.ai;
+			if(i > 0)
+				y = adza(y, i);
+			else 
+				x = adza(x, i * -1);
+			i = y.ai - 1;
+			while(i > -1) {
+				y.ad[i] = y.ad[i] - x.ad[i] + '0';
+				if(y.ad[i] < '0') {
+					if(i == 0) {
+						y.bd[y.bi - 1]--;
+						y.ad[i] += 10;
+						
+					}	
+					else {
+						y.ad[i - 1]--;
+						y.ad[i] += 10;
+					}
+				}
+				i--;
+			}
+			y = rmza(y);
+			i = x.bi - 1;
+			while(i > -1) {
+				y.bd[i] = y.bd[i] - x.bd[i] + '0';
+				if(y.bd[i] < '0') {
+					y.bd[i - 1]--;
+					y.bd[i] += 10;
+				}
+				i--;
+			}
+			return rmz(y);
+		}
+		else {
+			i = y.ai - x.ai;
+			if(i > 0)
+				x = adza(x, i);
+			else
+				y = adza(y, i * -1);
+			i = y.ai - 1;
+			while(i > -1) {
+				x.ad[i] = x.ad[i] - y.ad[i] + '0';
+				if(x.ad[i] < '0') {
+					if(i == 0) {
+						x.bd[x.bi - 1]--;
+						x.ad[i] += 10;
+					}	
+					else {
+						x.ad[i - 1]--;
+						x.ad[i] += 10;
+					}
+				}
+				i--;
+			}
+			x = rmza(x);
+			i = x.bi - 1;
+			while(i > -1) {
+				x.bd[i] = x.bd[i] - y.bd[i] + '0';
+				if(x.bd[i] < '0') {
+					x.bd[i - 1]--;
+					x.bd[i] += 10;
+				}
+				i--;
+			}
+			x.sign = 1;
+			return rmz(x);
+		}
+	}
+	else if(y.bi > x.bi) {
+		i = x.ai - y.ai;
+		if(i > 0)
+			y = adza(y, i);
+		else
+			x = adza(x, i * -1);
+		i = y.ai - 1;
+		while(i > -1) {
+			y.ad[i] = y.ad[i] - x.ad[i] + '0';
+			if(y.ad[i] < '0') {
+				if(i == 0) {
+					y.bd[y.bi - 1]--;
+					y.ad[i] += 10;					
+				}	
+				else {
+					y.ad[i - 1]--;
+					y.ad[i] += 10;
+				}
+			}
+			i--;
+		}
+		y = rmza(y);
+		x = adz(x, y.bi - x.bi);
+		i = y.bi - 1;
+		while(i > -1) {
+			y.bd[i] = y.bd[i] - x.bd[i] + '0';
+			if(y.bd[i] < '0') {
+				y.bd[i - 1]--;
+				y.bd[i] += 10;
+			}
+			i--;
+		}
+		y = rmz(y);
+		return y;
+	}
+	else {
+		i = y.ai - x.ai;
+		if(i > 0)
+			x = adza(x, i);
+		else
+			y = adza(y, i * -1);
+		i = y.ai - 1;
+		while(i > -1) {
+			x.ad[i] = x.ad[i] - y.ad[i] + '0';
+			if(x.ad[i] < '0') {
+				if(i == 0) {
+					x.bd[x.bi - 1]--;
+					x.ad[i] += 10;
+				}	
+				else {
+					x.ad[i - 1]--;
+					x.ad[i] += 10;
+				}
+			}
+			i--;
+		}
+		x = rmza(x);
+		i = x.bi - 1;
+		y = adz(y, x.bi - y.bi);
+		while(i > -1) {
+			x.bd[i] = x.bd[i] - y.bd[i] + '0';
+			if(x.bd[i] < '0') {
+				x.bd[i - 1]--;
+				x.bd[i] += 10;
+			}
+			i--;
+		}
+		x.sign = 1;
+		x = rmz(x);
+		return x;
+	}
+}
+num mul(num x, num y) {
+	num res;
+	res.bi = 0;
+	res.ai = 0;
+	res.ad[0] = '\0';
+	res.bd[0] = '\0';
+	int i = 0, j = 0, m;	
+	strcat(x.bd, x.ad);
+	strcat(y.bd, y.ad);
+	if(x.bi + x.ai > y.bi + y.ai)
+		y = adz(y, x.bi + x.ai - y.ai - y.bi);
+	else if(x.bi + x.ai < y.bi + y.ai)
+		x = adz(x, y.bi + y.ai - x.bi - x.ai);
+	res = adz(res, x.bi + x.ai + y.ai + y.bi);
+	while(i < y.bi + y.ai) {
+		j = 0;
+		while(j < x.bi + x.ai) {
+			m = (x.bd[j] - '0') * (y.bd[i] - '0');
+			res.bd[i + j + 1] += m % 10;
+			res.bd[i + j] += m / 10;
+			j++;
+		}
+		i++;
+	}
+	i = x.bi + y.bi + x.ai + y.ai - 1;
+	while(i > -1) {
+		while(res.bd[i] > '9') {
+			res.bd[i - 1] += 1;
+			res.bd[i] -= 10;
+		}
+		i--;
+	}
+	res.ai = x.ai + y.ai;
+	res.bi -= res.ai;
+	i = res.bi;
+	j = 0;
+	while(j < res.ai) {
+		res.ad[j] = res.bd[res.bi + j];
+		j++;
+	}
+	res.ad[res.ai] = '\0';
+	res.bd[res.bi] = '\0';
+	if(x.sign == y.sign)
+		res.sign = 0;
+	else
+		res.sign = 1;
+	res = rmza(res);
+	return rmz(res);
+}
+num divi(num x, num y) {
+	num q, r, b;
+	q.bd[0] = '\0';
+	q.sign = 0;
+	q.ad[0] = '\0';
+	q.ai = q.bi = 0;
+	r = q;
+	strcat(x.bd, x.ad);
+	strcat(y.bd, y.ad);
+	if(x.sign == y.sign)
+		q.sign = 0;
+	else
+		q.sign = 1;
+	x.sign = y.sign = 0;
+	x.bi += x.ai;
+	y.bi += y.ai;
+	q.ai = y.ai - x.ai;
+	x.ai = y.ai = 0;
+	x.ad[0] = y.ad[0] = '0';
+	int i = 0, j;
+	while(i < y.bi) {
+		j = -1;
+		r.bd[r.bi] = y.bd[i];
+		r.bd[r.bi + 1] = '\0';
+		r.bi ++;
+		b = r;
+		while(b.sign == 0) {
+			b = sub(x, b);
+			j++;
+		}
+		r = add(x, b);
+		q.bd[i] = j + 48;
+		i++;
+	}
+	q.bd[i] = '\0';
+	q.bi = i;
+	r = rmz(r);
+	if(lflag == 1 && r.bi != 0) {
+		i = 0;
+		while(i < 7) {
+			j = -1;
+			r.bd[r.bi] = '0';
+			r.bd[r.bi + 1] = '\0';
+			r.bi ++;
+			b = r;
+			while(b.sign == 0) {
+				b = sub(x, b);
+				j++;
+			}
+			r = add(x, b);
+			q.bd[q.bi + i] = j + 48;
+			i++;
+		}
+		q.bi += i;
+		q.bd[q.bi] = '\0';
+		q.ai += 7;
+	}
+	q.bi -= q.ai;
+	if(lflag == 0) {
+		q.ai = 0;
+	}
+	else {
+		j = 0;
+		while(j < q.ai) {
+			q.ad[j] = q.bd[q.bi + j];
+			j++;
+		}
+	}
+	q.ad[q.ai] = '\0';
+	q.bd[q.bi] = '\0';
+	q = rmza(q);
+	return rmz(q);
+}
+num mod(num x, num y) {
+	num r, b;
+	r.bd[0] = '\0';
+	r.sign = 0;
+	r.ad[0] = '\0';
+	r.ai = r.bi = 0;
+	int i = 0, j, k;
+	if(x.ai > y.ai) {
+		k = x.ai;
+		j = x.ai - y.ai;
+		y = adza(y, j);
+	}
+	else if(x.ai < y.ai) {
+		k = y.ai;
+		j = y.ai - x.ai;
+		x = adza(x, j);
+	}
+	else {
+		k = j = x.ai;
+	}
+	strcat(x.bd, x.ad);
+	strcat(y.bd, y.ad);
+	x.bi += x.ai;
+	y.bi += y.ai;
+	x.ai = y.ai = 0;
+	x.ad[0] = y.ad[0] = '\0';	
+	while(i < y.bi) {
+		j = -1;
+		r.bd[r.bi] = y.bd[i];
+		r.bd[r.bi + 1] = '\0';
+		r.bi ++;
+		b = r;
+		while(b.sign == 0) {
+			b = sub(x, b);
+			j++;
+		}
+		r = add(x, b);
+		i++;
+	}
+	r.bi -= k;
+	j = 0;
+	while(j < k) {
+		r.ad[j] = r.bd[r.bi + j];
+		j++;
+	}
+	r.ai = k;
+	r.ad[r.ai] = '\0';
+	r.bd[r.bi] = '\0';
+	r = rmza(r);
+	return rmz(r);
+}
+
+num solve(char op, num x, num y) {
+//	float temp = atof(x.bd) + atof(x.ad);
+	int flag = 0, i = 0;
+	num res, t;
+	t.bi = 1;
+	t.bd[0] = '1';
+	t.bd[1] = '\0';
+	t.ai = 0;
+	t.ad[0] = '\0';
+	t.sign = 0;
 	switch(op) {
 		case '+':
-			return (y + x);
+			return add(x, y);
 			break;
 		case '-':
-			return (y - x);
+			return sub(x, y);
 			break;
 		case '*':
-			return (y * x);
+			return mul(x, y);
 			break;
 		case '/':
-			if(x == 0) {
-				printf("division by 0 ");
-				return INT_MIN;
+			x = rmz(x);
+			if(x.bi == 0 && x.ai == 0) {
+				printf("division by 0 \n");
+				error = 1;
+				return y;
 			}
-			if(lflag == 1)
-				return (y / x);
-			else {
-				if(((int)x) == 0) {
-					printf("division by 0 ");
-					return INT_MIN;
-				}
-				else
-					return ((int)y / (int)x);
-			}
+			else
+				return divi(x, y);
 			break;
 		case '%':
-			if(((int)x) == 0) {
-				printf("mod by 0 ");
-				return INT_MIN;
+			x = rmz(x);
+			if(x.bi == 0 && x.ai == 0) {
+				printf("mod by 0 \n");
+				error = 1;
+				return x;
 			}
 			else
-				return ((int)y % (int)x);
+				return mod(x, y);
 			break;
 		case '^':
-			if(x == 0)
-				return 1;
-			else
-				return powf(y, x);
+			x = rmz(x);
+			x = rmza(x);
+			if(x.ai != 0) {
+				printf("exponent must be integer");
+				error = 1;
+			}
+			else if(x.bi == 0)
+				return t;
+			else if(x.bi == 1 && x.bd[0] == '1')
+				return y;
+			else {
+				res = y;
+				while(x.bd[0] != '1' && x.bi == 1) {
+					res = mul(res, y);
+					x = sub(t, x);
+				}
+			}
+			return res;
 			break;			
 		case 'a':
-			return sin(x);
+return x;//			return sin(temp);
 			break;
 		case 'b':
-			return cos(x);
+return x;//			return cos(temp);
 			break;
 		case 'c':
-			return tan(x);
+return x;//			return tan(temp);
 			break;
 		case 'd':
-			return (1 / tan(x));
+return x;//			return (1 / tan(temp));
 			break;
 		case 'e':
-			return (1 / cos(x));
+return x;//			return (1 / cos(temp));
 			break;
 		case 'f':
-			return (1 / sin(x));
+return x;//			return (1 / sin(temp));
 			break;
 		case 'g':
-			return (log(x) / log(10));
+return x;//			return (log(temp) / log(10));
 			break;
 		case 'h':
-			return log(x);
+return x;//			return log(temp);
 			break;
 		case 'i':
-			return exp(x);
+return x;//			return exp(temp);
 			break;
 		case 'j':
-			return sqrt(x);
+return x;//			return sqrt(temp);
 			break;
 		case 'k':
-			return cbrt(x);
+return x;//			return cbrt(temp);
 			break;
 		case 'l':
-			return (y && x);
+			x = rmz(x);
+			y = rmz(y);
+			if(!((x.ai + x.bi) && (y.ai + y.bi)))
+				t.bd[0] = '0';
+			return t;
 			break;
 		case 'm':
-			return (y || x);
+			x = rmz(x);
+			y = rmz(y);
+			if(!((x.ai + x.bi) || (y.ai + y.bi)))
+				t.bd[0] = '0';
+			return t;
 			break;
-		case 'n':
-			return (y > x);
+		case 'n': case 'p':
+			x = rmz(x);
+			y = rmz(y);
+			if(x.bi > y.bi)
+				t.bd[0] = '0';
+			else if(x.bi == y.bi) {
+				while(i < x.bi) {
+					if(x.bd[i] > y.bd[i]) {
+						flag = 2;
+						t.bd[0] = '0';
+						break;
+					}
+					else if(x.bd[i] < y.bd[i]) {
+						flag = 1;
+						break;
+					}
+					i++;
+				}
+				if(flag == 0) {
+					i = 0;
+					while((i < x.ai) || (i < y.ai)) {
+						if(x.ad[i] > y.ad[i]) {
+							flag = 2;
+							t.bd[0] = '0';
+							break;
+						}
+						else if(x.ad[i] < y.ad[i]) {
+							flag = 1;
+							break;
+						}
+						i++;
+					}	
+				}
+				if(op == 'n' && flag == 0)
+					t.bd[0] = '0';
+			}
+			return t;
 			break;
-		case 'o':
-			return (y < x);
+		case 'o': case 'q':
+			x = rmz(x);
+			y = rmz(y);
+			if(x.bi < y.bi)
+				t.bd[0] = '0';
+			else if(x.bi == y.bi) {
+				while(i < x.bi) {
+					if(x.bd[i] > y.bd[i]) {
+						flag = 2;
+						break;
+					}
+					else if(x.bd[i] < y.bd[i]) {
+						flag = 1;
+						t.bd[0] = '0';
+						break;
+					}
+					i++;
+				}
+				if(flag == 0) {
+					i = 0;
+					while(i < x.ai ) {
+						if(x.ad[i] > y.ad[i]) {
+							flag = 2;
+							break;
+						}
+						else if(x.ad[i] < y.ad[i]) {
+							flag = 1;
+							t.bd[0] = '0';
+							break;
+						}
+						i++;
+					}	
+				}
+				if((flag == 0) && (op == 'o'))
+					t.bd[0] = '0';
+			}
+			return t;
 			break;
-		case 'p':
-			return (y >= x);
-			break;			
-		case 'q':
-			return (y <= x);
-			break;			
+		case 'r':
+			return x;// '=' optr
+			break;
 		default:
-			return INT_MIN;
+			error = 1;
+			return x;
 			break;				
 	}
 
@@ -344,9 +964,9 @@ char ctop(stackc *b) {
 
 
 
-long double infixeval(char *str) {
+num infixeval(char *str) {
 	token *t;
-	long double result, x, y;
+	num result, x, y;
 	int  pretok = 0, flag = 0, curtok = 0;
 	stacki a;
 	initi(&a);
@@ -357,31 +977,45 @@ long double infixeval(char *str) {
 	while(1) {
 		t = getnext(str, &reset);
 		curtok = t->type;
-		if(curtok == pretok && pretok == OPERAND)
-			return INT_MIN;
+		if(curtok == pretok && pretok == OPERAND) {
+			error = 1;
+			return x;
+		}
 		if((curtok == pretok || emptyi(&a)) && t->op == '-') {		/*if int_stack is empty then '-' is 1st char of string*/
-			if(!fulli(&a))		
-				pushi(&a, -1);
+			if(!fulli(&a)) {
+				x.bd[0] = '1';
+				x.bi = 1;
+				x.ad[0] = '\0';
+				x.ai = 0;
+				x.bd[1] = '\0';
+				x.sign = 1;
+				pushi(&a, x);
+			}
 			else {
+				error = 1;
 				stackfull = 1;
-				return INT_MIN;
+				return x;
 			}
 			if(!fullc(&b))
 				pushc(&b, '*');
 			else {
+				error = 1;
 				stackfull = 1;
-				return INT_MIN;
+				return x;
 			}
 			continue;
 		}
-		if(t->type == END && h != 0)
-			return INT_MIN;
+		if(t->type == END && h != 0) {
+			error = 1;
+			return x;
+		}
 		if(t->type == OPERAND) {
 			if(!fulli(&a))
 				pushi(&a, t->number);
 			else {
+				error = 1;
 				stackfull = 1;
-				return INT_MIN;
+				return x;
 			}
 		}
 		else if (t->type == OPERATOR) {
@@ -391,14 +1025,19 @@ long double infixeval(char *str) {
 				h--;
 			if(!emptyc(&b)) {
 				optr = ctop(&b);
+				if(optr == 'r') {
+					error = 1;
+					return x;
+				}
 				p = precedence(optr);
 				q = precedence(t->op);
 				if(q > p) {
 					if(!fullc(&b))	
 						pushc(&b, t->op);
 					else {
+						error = 1;
 						stackfull = 1;
-						return INT_MIN;
+						return x;
 					}
 				} 	
 				else {	
@@ -410,13 +1049,15 @@ long double infixeval(char *str) {
 						}
 						else if(optr == 'a' || optr == 'b' || optr == 'c' || optr == 'd' || 
 						        optr == 'h' || optr == 'g' || optr == 'f' || optr == 'e' || 
-						        optr == 'i' || optr == 'j' || optr == 'k' || optr == 'l' || 
-						        optr == 'o' || optr == 'n' || optr == 'm') {
+						        optr == 'i' || optr == 'j' || optr == 'k') {
 							if(!emptyi(&a))
 								x = popi(&a);
-							else
-								return INT_MIN;						
-							result = solve(optr, x, 1);
+							else {
+								error = 1;
+								return x;						
+							}
+							result = solve(optr, x, x);
+//							free(x);
 							pushi(&a, result);
 							if(!emptyc(&b)) {
 								optr = ctop(&b);
@@ -428,13 +1069,19 @@ long double infixeval(char *str) {
 						else{
 							if(!emptyi(&a))
 								x = popi(&a);
-							else
-								return INT_MIN;
+							else {
+								error = 1;
+								return x;
+							}
 							if(!emptyi(&a))
 								y = popi(&a);
-							else
-								return INT_MIN;
+							else {
+								error = 1;
+								return x;
+							}
 							result = solve(optr, x, y);
+//							free(x);
+//							free(y);
 							pushi(&a, result);
 							if(!emptyc(&b)) {
 								optr = ctop(&b);
@@ -452,7 +1099,6 @@ long double infixeval(char *str) {
 			}
 			else { 
 				pushc(&b, t->op);
-				
 			}
 		}
 		else if (t->type == END) {
@@ -461,25 +1107,33 @@ long double infixeval(char *str) {
 					optr = popc(&b);
 					if(optr == 'a' || optr == 'b' || optr == 'c' || optr == 'd' || 
 					   optr == 'h' || optr == 'g' || optr == 'f' || optr == 'e' || 
-					   optr == 'i' || optr == 'j' || optr == 'k' || optr == 'l' || 
-					   optr == 'o' || optr == 'n' || optr == 'm') {
+					   optr == 'i' || optr == 'j' || optr == 'k') {
 						if(!emptyi(&a))
 							x = popi(&a);
-						else
-							return INT_MIN;						
-						result = solve(optr, x, 1);
+						else {
+							error = 1;
+							return x;
+						}
+						result = solve(optr, x, x);
+//						free(x);
 						pushi(&a, result);
 					}
 					else {
 						if(!emptyi(&a))
 							x = popi(&a);
-						else
-							return INT_MIN;
+						else {
+							error = 1;
+							return x;
+						}
 						if(!emptyi(&a))
 							y = popi(&a);
-						else
-							return INT_MIN;
+						else {
+							error = 1;
+							return x;
+						}
 						result = solve(optr, x, y);
+//						free(y);
+//						free(x);
 						pushi(&a, result);
 					}
 				}
@@ -487,16 +1141,21 @@ long double infixeval(char *str) {
 			}
 			else {
 				x = popi(&a);		/*no need to check if int_stack is empty because there has to be a number*/	
-				if(!emptyi(&a))
-					return INT_MIN;
+				if(!emptyi(&a)) {
+					error = 1;
+					return x;
+				}
 				else 
 					return x;
 			}
 		} 
-		else if (t->type == ERROR) 
-			return INT_MIN; 
+		else if (t->type == ERROR) {
+			error = 1;
+			return x; 
+		}
 		pretok = curtok;
 	}
+	free(t);
 }
 
 void printusage() {
@@ -520,26 +1179,37 @@ int main(int argc,char *argv[]) {
 		}
 		q++;
 	}
-	long double ans;
+	num ans;
 	int x;
-	long double infixeval(char *infix);
+	num infixeval(char *infix);
 	while(printf("> ") && (x = readline(str, 128))) {
 		ans = infixeval(str);
-		if(ans == INT_MIN) {
+		if(error == 1) {
 			if(stackfull == 1) {
 				fprintf(stderr, "exprression is too long ... stack is full\n");
 				stackfull = 0;
 			}
 			else
 				fprintf(stderr, "Error in expression\n");
+			error = 0;
 		}
 		else {
-			if(dflag == 1 || lflag == 1)
-				fprintf(stdout, "\t%Lf\n", ans);
-			else
-				fprintf(stdout, "\t%.0Lf\n", ans);
+			printf("\t");
+			if(ans.sign == 1) 
+				printf("-");
+			if(ans.bi == 0)
+				printf("0");
+			if((dflag == 1 || lflag == 1) && (ans.ai != 0)) {
+				strcat(ans.bd, ".");
+				strcat(ans.bd, ans.ad);
+				puts(ans.bd);
+			}	
+			else {
+				puts(ans.bd);				
+			}
 		}
 		dflag = 0;
 	}
+//	free(ans);
 	return 0;
 }

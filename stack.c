@@ -3,12 +3,13 @@
 
 
 
-void pushi(stacki *s, long double num) {
-	s->a[s->i]= num;
+void pushi(stacki *s, num numb) {
+	s->a[s->i]= numb;
 	(s->i)++;
 }
-long double popi(stacki *s) {
-	long double t = s->a[s->i - 1];
+num popi(stacki *s) {
+	num t;
+	t = s->a[s->i - 1];
 	(s->i)--;
 	return t;
 }

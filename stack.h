@@ -2,12 +2,19 @@
 
 
 
+typedef struct num{
+	char bd[30], ad[30];
+	int bi, ai, sign;
+}num;
+
+
+
 typedef struct stacki {
-	long double a[MAX];
+	num a[MAX];
 	int i;
 }stacki;
-void pushi(stacki *s, long double num);
-long double popi(stacki *s);
+void pushi(stacki *s, num numb);
+num popi(stacki *s);
 int emptyi(stacki *s);
 int fulli(stacki *s);
 void initi(stacki *s);
