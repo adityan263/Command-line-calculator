@@ -119,6 +119,7 @@ token *getnext(char *arr, int *reset) {
 				}
 				else if(nextstate == ALPH) {
 					x = 0;
+					expre = (char *)malloc(sizeof(char) * 7);
 					*(expre + x) = arr[i];
 					x++;
 				}		
@@ -215,7 +216,7 @@ char ope (char *expr) {
 		else if(strcmp(expr, "exp") == 0)
 			return 'i';
 	}		
-	else if(strcmp(expr, "sqrt") == 0)
+	if(strcmp(expr, "sqrt") == 0)
 		return 'j';		
 	else if(strcmp(expr, "cbrt") == 0)
 		return 'k';		
@@ -233,6 +234,8 @@ char ope (char *expr) {
 		return 'q';
 	else if(strcmp(expr, "=") == 0)
 		return 'r';
+	else if(strcmp(expr, "==") == 0)
+		return 's';
 	else
 		return '1';
 }
@@ -240,7 +243,7 @@ char ope (char *expr) {
 int precedence(char b) {
 	switch(b) {
 		case 'l': case 'm': case 'n': case 'o':
-		case 'p': case 'r': case 'q': 
+		case 'p': case 'r': case 'q': case 's':
 			return -1;
 			break;
 		case '(':
@@ -268,6 +271,50 @@ num sub(num, num);
 num mul(num, num);
 num divi(num, num);
 num mod(num, num);
+
+num getpi(num t) {
+	t.bd[0] = '3';
+	t.bd[1] = '1';
+	t.bd[2] = '4';
+	t.bd[3] = '1';
+	t.bd[4] = '5';
+	t.bd[5] = '9';
+	t.bd[6] = '2';
+	t.bd[7] = '6';
+	t.bd[8] = '5';
+	t.bd[9] = '3';
+	t.bd[10] = '5';
+	t.bd[11] = '8';
+	t.bd[12] = '9';
+	t.bd[13] = '7';
+	t.bd[14] = '9';
+	t.bd[15] = '3';
+	t.bd[16] = '2';
+	t.bd[17] = '3';
+	t.bd[18] = '8';
+	t.bd[19] = '4';
+	t.bd[20] = '6';
+	t.bd[21] = '2';
+	t.bd[22] = '6';
+	t.bd[23] = '4';
+	t.bd[24] = '3';
+	t.bd[25] = '3';
+	t.bd[26] = '8';
+	t.bd[27] = '3';
+	t.bd[28] = '2';
+	t.bd[29] = '7';
+	t.bd[30] = '9';
+	t.bd[31] = '5';
+	t.bd[32] = '0';
+	t.bd[33] = '2';
+	t.bd[34] = '8';
+	t.bd[35] = '8';
+	t.bd[36] = '4';
+	t.bd[37] = '1';
+	t.bd[38] = '\0';
+	t.bi = 38;
+	return t;
+}
 
 num adz(num t, int i) {
 	if(i == 0)
@@ -547,8 +594,7 @@ num sub(num x, num y) {
 			}
 			i--;
 		}
-		y = rmz(y);
-		return y;
+		return rmz(y);
 	}
 	else {
 		i = y.ai - x.ai;
@@ -762,9 +808,11 @@ num mod(num x, num y) {
 }
 
 num solve(char op, num x, num y) {
-//	float temp = atof(x.bd) + atof(x.ad);
-	int flag = 0, i = 0;
+	int flag = 0, i = 0, j;
+	char str[30];
+	str[0] = '.';
 	num res, t;
+	long double p;
 	t.bi = 1;
 	t.bd[0] = '1';
 	t.bd[1] = '\0';
@@ -807,52 +855,421 @@ num solve(char op, num x, num y) {
 			if(x.ai != 0) {
 				printf("exponent must be integer");
 				error = 1;
+				return x;
 			}
 			else if(x.bi == 0)
 				return t;
-			else if(x.bi == 1 && x.bd[0] == '1')
+			else if(x.bi == 1 && x.bd[0] == '1' && x.sign == 0)
 				return y;
 			else {
-				res = y;
-				while(x.bd[0] != '1' && x.bi == 1) {
-					res = mul(res, y);
+				if(x.sign == 0) {
+					res = y;
 					x = sub(t, x);
+					while(x.bi > 0) {
+						res = mul(res, y);
+						x = sub(t, x);
+						x=rmz(x);
+					}
+				}
+				else {
+					res = t;
+					x.sign = 0;
+					
+					while(x.bi > 0) {
+						res = divi(y, res);
+						x = sub(t, x);
+						x=rmz(x);
+					}
 				}
 			}
 			return res;
 			break;			
 		case 'a':
-return x;//			return sin(temp);
+			if(x.bi > 38) {
+				t = getpi(t);
+				while(x.bi > 38) {
+					x = sub(t, x);
+					x = rmz(x);
+				}
+				t.bi = 1;
+				t.bd[0] = 1;
+				t.bd[1] = '\0';
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = sin(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			if(((int)p))
+				return t;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			t.bd[0] = '\0';
+			t.bi = 0;
+			return t;
 			break;
 		case 'b':
-return x;//			return cos(temp);
+			if(x.bi > 38) {
+				t = getpi(t);
+				while(x.bi > 38) {
+					x = sub(t, x);
+					x = rmz(x);
+				}
+				t.bi = 1;
+				t.bd[0] = 1;
+				t.bd[1] = '\0';
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = cos(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			if(((int)p))
+				return t;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			t.bd[0] = '\0';
+			t.bi = 0;
+			return t;
 			break;
 		case 'c':
-return x;//			return tan(temp);
+			if(x.bi > 38) {
+				t = getpi(t);
+				while(x.bi > 38) {
+					x = sub(t, x);
+					x = rmz(x);
+				}
+				t.bi = 1;
+				t.bd[0] = 1;
+				t.bd[1] = '\0';
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = tan(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'd':
-return x;//			return (1 / tan(temp));
+			if(x.bi > 38) {
+				t = getpi(t);
+				while(x.bi > 38) {
+					x = sub(t, x);
+					x = rmz(x);
+				}
+				t.bi = 1;
+				t.bd[0] = 1;
+				t.bd[1] = '\0';
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = 1 / tan(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'e':
-return x;//			return (1 / cos(temp));
+			if(x.bi > 38) {
+				t = getpi(t);
+				while(x.bi > 38) {
+					x = sub(t, x);
+					x = rmz(x);
+				}
+				t.bi = 1;
+				t.bd[0] = 1;
+				t.bd[1] = '\0';
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = 1 / cos(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'f':
-return x;//			return (1 / sin(temp));
+			if(x.bi > 38) {
+				t = getpi(t);
+				while(x.bi > 38) {
+					x = sub(t, x);
+					x = rmz(x);
+				}
+				t.bi = 1;
+				t.bd[0] = 1;
+				t.bd[1] = '\0';
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = 1 / sin(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'g':
-return x;//			return (log(temp) / log(10));
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = log(p) / log(10);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'h':
-return x;//			return log(temp);
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = log(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'i':
-return x;//			return exp(temp);
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = exp(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'j':
-return x;//			return sqrt(temp);
+			if(x.sign == 1) {
+				error = 1;
+				printf("squareroot of negative number is not real\n");
+				return x;
+			}
+			strcat(str, x.ad);
+			p = atof(x.bd) + atof(str);
+			p = sqrt(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'k':
-return x;//			return cbrt(temp);
+			p = atof(x.bd) + atof(str);
+			p = sqrt(p);
+			i = 0;
+			if(p < 0) {
+				t.sign = 1;
+				p *= -1;
+			}
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + (int)(p * 10);
+				p = (p * 10) -(int)(p * 10);
+				i++;
+			}
+			t.ad[i] = '\0';
+			t.ai = 6;
+			return t;
 			break;
 		case 'l':
 			x = rmz(x);
@@ -946,6 +1363,31 @@ return x;//			return cbrt(temp);
 			break;
 		case 'r':
 			return x;// '=' optr
+			break;
+		case 's':
+			x = rmz(x);
+			y = rmz(y);
+			x = rmza(x);
+			y = rmza(y);
+			if((x.bi != y.bi) || (x.ai != y.ai)) {
+				t.bd[0] = '0';
+				return t;
+			}
+			while(i < x.bi) {
+				if(x.bd[i] != y.bd[i]) {
+					t.bd[0] = '0';
+					return t;
+				}
+				i++;
+			}
+			while(i < x.ai) {
+				if(x.ad[i] != y.ad[i]) {
+					t.bd[0] = '0';
+					return t;
+				}
+				i++;
+			}
+			return t;
 			break;
 		default:
 			error = 1;
@@ -1194,7 +1636,6 @@ int main(int argc,char *argv[]) {
 			error = 0;
 		}
 		else {
-			printf("\t");
 			if(ans.sign == 1) 
 				printf("-");
 			if(ans.bi == 0)
