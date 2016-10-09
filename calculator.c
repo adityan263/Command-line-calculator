@@ -28,7 +28,6 @@ typedef struct token {
 	char op;
 }token;
 
-//printf("");getchar();
 
 enum states { SPC, DIG, OPR, ALPH, STOP, ERR };
 
@@ -75,7 +74,9 @@ token *getnext(char *arr, int *reset) {
 		switch(arr[i]) {
 			case '0': case '1': case '2': case '3':
 			case '4': case '5': case '6': case '7':
-			case '8': case '9': case '.':
+			case '8': case '9': case '.': case 'A':
+			case 'B': case 'C': case 'D': case 'E':
+			case 'F':
 				nextstate = DIG;
 				break;
 			case 'a': case 'b': case 'c': case 'd':
@@ -236,6 +237,30 @@ char ope (char *expr) {
 		return 'r';
 	else if(strcmp(expr, "==") == 0)
 		return 's';
+	else if(strcmp(expr, "bo") == 0)
+		return 'A';		
+	else if(strcmp(expr, "bd") == 0)
+		return 'B';						
+	else if(strcmp(expr, "bh") == 0)
+		return 'C';
+	else if(strcmp(expr, "ob") == 0)
+		return 'D';
+	else if(strcmp(expr, "od") == 0)
+		return 'E';				
+	else if(strcmp(expr, "oh") == 0)
+		return 'F';
+	else if(strcmp(expr, "db") == 0)
+		return 'G';
+	else if(strcmp(expr, "do") == 0)
+		return 'H';
+	else if(strcmp(expr, "dh") == 0)
+		return 'I';
+	else if(strcmp(expr, "hb") == 0)
+		return 'J';
+	else if(strcmp(expr, "ho") == 0)
+		return 'K';
+	else if(strcmp(expr, "hd") == 0)
+		return 'L';
 	else
 		return '1';
 }
@@ -261,6 +286,9 @@ int precedence(char b) {
 		case 'a': case 'b': case 'c': case 'd':
 		case 'e': case 'f': case 'g': case 'h':
 		case 'k': case 'j': case 'i':		
+		case 'A': case 'B': case 'C': case 'D':
+		case 'E': case 'F': case 'G': case 'H':
+		case 'I': case 'J': case 'K': case 'L':
 			return 3;
 			break;
 	}
@@ -812,7 +840,7 @@ num solve(char op, num x, num y) {
 	char str[30];
 	str[0] = '.';
 	num res, t;
-	long double p;
+	long double p = 0;
 	t.bi = 1;
 	t.bd[0] = '1';
 	t.bd[1] = '\0';
@@ -884,7 +912,7 @@ num solve(char op, num x, num y) {
 			}
 			return res;
 			break;			
-		case 'a':
+		case 'a': case 'b':
 			if(x.bi > 38) {
 				t = getpi(t);
 				while(x.bi > 38) {
@@ -897,7 +925,14 @@ num solve(char op, num x, num y) {
 			}
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
-			p = sin(p);
+			switch(op) {
+				case 'a':
+					p = sin(p);
+					break;
+				case 'b':
+					p = cos(p);
+					break;
+			}
 			i = 0;
 			if(p < 0) {
 				t.sign = 1;
@@ -916,7 +951,7 @@ num solve(char op, num x, num y) {
 			t.bi = 0;
 			return t;
 			break;
-		case 'b':
+		case 'c': case 'd': case 'e': case 'f':
 			if(x.bi > 38) {
 				t = getpi(t);
 				while(x.bi > 38) {
@@ -929,39 +964,20 @@ num solve(char op, num x, num y) {
 			}
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
-			p = cos(p);
-			i = 0;
-			if(p < 0) {
-				t.sign = 1;
-				p *= -1;
+			switch(op) {
+				case 'c':
+					p = tan(p);
+					break;
+				case 'd':
+					p = 1 / tan(p);
+					break;
+				case 'e':
+					p = 1 / cos(p);
+					break;
+				case 'f':
+					p = 1 / sin(p);
+					break;
 			}
-			if(((int)p))
-				return t;
-			while(i < 6) {
-				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				i++;
-			}
-			t.ad[i] = '\0';
-			t.ai = 6;
-			t.bd[0] = '\0';
-			t.bi = 0;
-			return t;
-			break;
-		case 'c':
-			if(x.bi > 38) {
-				t = getpi(t);
-				while(x.bi > 38) {
-					x = sub(t, x);
-					x = rmz(x);
-				}
-				t.bi = 1;
-				t.bd[0] = 1;
-				t.bd[1] = '\0';
-			}
-			strcat(str, x.ad);
-			p = atof(x.bd) + atof(str);
-			p = tan(p);
 			i = 0;
 			if(p < 0) {
 				t.sign = 1;
@@ -989,195 +1005,15 @@ num solve(char op, num x, num y) {
 			t.ai = 6;
 			return t;
 			break;
-		case 'd':
-			if(x.bi > 38) {
-				t = getpi(t);
-				while(x.bi > 38) {
-					x = sub(t, x);
-					x = rmz(x);
-				}
-				t.bi = 1;
-				t.bd[0] = 1;
-				t.bd[1] = '\0';
-			}
+		case 'g': case 'h': case 'i':
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
-			p = 1 / tan(p);
-			i = 0;
-			if(p < 0) {
-				t.sign = 1;
-				p *= -1;
-			}
-			while(p > 1) {
-				p = p / 10;
-				i++;
-			}
-			t.bd[i] = '\0';
-			t.bi = i;
-			j = 0;
-			while(i > j) {
-				t.bd[j] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				j++;
-			}
-			i = 0;
-			while(i < 6) {
-				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				i++;
-			}
-			t.ad[i] = '\0';
-			t.ai = 6;
-			return t;
-			break;
-		case 'e':
-			if(x.bi > 38) {
-				t = getpi(t);
-				while(x.bi > 38) {
-					x = sub(t, x);
-					x = rmz(x);
-				}
-				t.bi = 1;
-				t.bd[0] = 1;
-				t.bd[1] = '\0';
-			}
-			strcat(str, x.ad);
-			p = atof(x.bd) + atof(str);
-			p = 1 / cos(p);
-			i = 0;
-			if(p < 0) {
-				t.sign = 1;
-				p *= -1;
-			}
-			while(p > 1) {
-				p = p / 10;
-				i++;
-			}
-			t.bd[i] = '\0';
-			t.bi = i;
-			j = 0;
-			while(i > j) {
-				t.bd[j] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				j++;
-			}
-			i = 0;
-			while(i < 6) {
-				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				i++;
-			}
-			t.ad[i] = '\0';
-			t.ai = 6;
-			return t;
-			break;
-		case 'f':
-			if(x.bi > 38) {
-				t = getpi(t);
-				while(x.bi > 38) {
-					x = sub(t, x);
-					x = rmz(x);
-				}
-				t.bi = 1;
-				t.bd[0] = 1;
-				t.bd[1] = '\0';
-			}
-			strcat(str, x.ad);
-			p = atof(x.bd) + atof(str);
-			p = 1 / sin(p);
-			i = 0;
-			if(p < 0) {
-				t.sign = 1;
-				p *= -1;
-			}
-			while(p > 1) {
-				p = p / 10;
-				i++;
-			}
-			t.bd[i] = '\0';
-			t.bi = i;
-			j = 0;
-			while(i > j) {
-				t.bd[j] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				j++;
-			}
-			i = 0;
-			while(i < 6) {
-				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				i++;
-			}
-			t.ad[i] = '\0';
-			t.ai = 6;
-			return t;
-			break;
-		case 'g':
-			strcat(str, x.ad);
-			p = atof(x.bd) + atof(str);
-			p = log(p) / log(10);
-			i = 0;
-			if(p < 0) {
-				t.sign = 1;
-				p *= -1;
-			}
-			while(p > 1) {
-				p = p / 10;
-				i++;
-			}
-			t.bd[i] = '\0';
-			t.bi = i;
-			j = 0;
-			while(i > j) {
-				t.bd[j] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				j++;
-			}
-			i = 0;
-			while(i < 6) {
-				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				i++;
-			}
-			t.ad[i] = '\0';
-			t.ai = 6;
-			return t;
-			break;
-		case 'h':
-			strcat(str, x.ad);
-			p = atof(x.bd) + atof(str);
-			p = log(p);
-			i = 0;
-			if(p < 0) {
-				t.sign = 1;
-				p *= -1;
-			}
-			while(p > 1) {
-				p = p / 10;
-				i++;
-			}
-			t.bd[i] = '\0';
-			t.bi = i;
-			j = 0;
-			while(i > j) {
-				t.bd[j] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				j++;
-			}
-			i = 0;
-			while(i < 6) {
-				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
-				i++;
-			}
-			t.ad[i] = '\0';
-			t.ai = 6;
-			return t;
-			break;
-		case 'i':
-			strcat(str, x.ad);
-			p = atof(x.bd) + atof(str);
-			p = exp(p);
+			if(op == 'g')
+				p = log(p) / log(10);
+			else if(op == 'h')
+				p = log(p);
+			else
+				p = exp(p);
 			i = 0;
 			if(p < 0) {
 				t.sign = 1;
@@ -1389,6 +1225,470 @@ num solve(char op, num x, num y) {
 			}
 			return t;
 			break;
+		case 'A':
+			i = x.bi % 3;
+			if(i)
+				x = adz(x, 3 - i);
+			i = 0;
+			while(i < x.bi) {
+				t.bd[i / 3] = 48;
+				if(x.bd[i] == '1')
+					t.bd[i / 3] += 4;
+				else if(x.bd[i] != '0')
+					error = 1;
+				if(x.bd[i + 1] == '1')
+					t.bd[i / 3] += 2;
+				else if(x.bd[i + 1] != '0')
+					error = 1;
+				if(x.bd[i + 2] == '1')
+					t.bd[i / 3] += 1;
+				else if(x.bd[i + 2] != '0')
+					error = 1;
+				i += 3;
+			}
+			t.bd[i / 3] = '\0';
+			t.bi = i / 3;
+			if(lflag == 1) {
+				i = x.ai % 3;
+				if(i)
+					x = adza(x, 3 - i);
+				i = 0;
+				while(i < x.ai) {
+					t.ad[i / 3] = 48;
+					if(x.ad[i] == '1')
+						t.ad[i / 3] += 4;
+					else if(x.ad[i] != '0')
+						error = 1;
+					if(x.ad[i + 1] == '1')
+						t.ad[i / 3] += 2;
+					else if(x.ad[i + 1] != '0')
+						error = 1;
+					if(x.ad[i + 2] == '1')
+						t.ad[i / 3] += 1;
+					else if(x.ad[i + 2] != '0')
+						error = 1;
+					i += 3;
+				}
+				t.ad[i / 3] = '\0';
+				t.ai = i / 3;
+			}
+			return t;/*bo*/
+			break;
+		case 'B':
+			while(i < x.bi) {
+				if(x.bd[i] == '1')
+					p += pow(2, x.bi - i - 1);
+				else if(x.bd[i] != '0') {
+					error = 1;
+					return x;
+				}
+				i++;
+			}
+			if(lflag == 1) {
+				i = 0;
+				while(i < x.ai) {
+					if(x.ad[i] == '1')
+						p += pow(2, -(1 + i));
+					else if(x.ad[i] != '0') {
+						error = 1;
+						return x;
+					}
+					i++;
+				}
+			}
+			i = 0;
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + ((int)(p * 10) % 10);
+				p = p * 10;
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + ((int)(p * 10) % 10);
+				p = p * 10;
+				i++;
+			}
+			t.ai = 6;
+			t.ad[i] = '\0';
+			return t;/*bd*/
+			break;
+		case 'C':
+			i = x.bi % 4;
+			if(i)
+				x = adz(x, 4 - i);
+			i = 0;
+			while(i < x.bi) {
+				t.bd[i / 4] = 48;
+				if(x.bd[i] == '1')
+					t.bd[i / 4] += 8;
+				else if(x.bd[i] != '0')
+					error = 1;
+				if(x.bd[i + 1] == '1')
+					t.bd[i / 4] += 4;
+				else if(x.bd[i + 1] != '0')
+					error = 1;
+				if(x.bd[i + 2] == '1')
+					t.bd[i / 4] += 2;
+				else if(x.bd[i + 2] != '0')
+					error = 1;
+				if(x.bd[i + 3] == '1')
+					t.bd[i / 4] += 1;
+				else if(x.bd[i + 3] != '0')
+					error = 1;
+				if(t.bd[i / 4] > '9')
+					t.bd[i / 4] += 7;
+				i += 4;
+			}
+			t.bd[i / 4] = '\0';
+			t.bi = i / 4;
+			if(lflag == 1) {
+				i = x.ai % 4;
+				if(i)
+					x = adza(x, 4 - i);
+				i = 0;
+				while(i < x.ai) {
+					t.ad[i / 4] = 48;
+					if(x.ad[i] == '1')
+						t.ad[i / 4] += 8;
+					else if(x.ad[i] != '0')
+						error = 1;
+					if(x.ad[i + 1] == '1')
+						t.ad[i / 4] += 4;
+					else if(x.ad[i + 1] != '0')
+						error = 1;
+					if(x.ad[i + 2] == '1')
+						t.ad[i / 4] += 2;
+					else if(x.ad[i + 2] != '0')
+						error = 1;
+					if(x.ad[i + 3] == '1')
+						t.ad[i / 4] += 1;
+					else if(x.ad[i + 3] != '0')
+						error = 1;
+					if(t.ad[i / 4] > '9')
+						t.ad[i / 4] += 7;
+					i += 4;
+				}
+				t.ad[i / 4] = '\0';
+				t.ai = i / 4;
+			}
+			return t;/*bh*/
+			break;
+		case 'D':
+			t.bd[0] = '\0';
+			while(i < x.bi) {
+				switch(x.bd[i]) {
+					case '0':
+						strcat(t.bd, "000");
+						break;
+					case '1':
+						strcat(t.bd, "001");
+						break;
+					case '2':
+						strcat(t.bd, "010");
+						break;
+					case '3':
+						strcat(t.bd, "011");
+						break;
+					case '4':
+						strcat(t.bd, "100");
+						break;
+					case '5':
+						strcat(t.bd, "101");
+						break;
+					case '6':
+						strcat(t.bd, "110");
+						break;
+					case '7':
+						strcat(t.bd, "111");
+						break;
+					default :
+						error = 1;
+						return x;
+						break;
+				}
+				i++;
+			}
+			t.bi = 3 * x.bi;
+			if(lflag == 1) {
+				t.ad[0] = '\0';
+				while(i < x.ai) {
+					switch(x.ad[i]) {
+						case '0':
+							strcat(t.ad, "000");
+							break;
+						case '1':
+							strcat(t.ad, "001");
+							break;
+						case '2':
+						strcat(t.ad, "010");
+							break;
+						case '3':
+							strcat(t.ad, "011");
+							break;
+						case '4':
+							strcat(t.ad, "100");
+							break;
+						case '5':
+							strcat(t.ad, "101");
+							break;
+						case '6':
+							strcat(t.ad, "110");
+							break;
+						case '7':
+							strcat(t.ad, "111");
+							break;
+						default :
+							error = 1;
+							return x;
+							break;
+					}
+					i++;
+				}
+				t.ai = 3 * x.ai;
+			}
+			return t;/*ob*/
+			break;
+		case 'E':
+			while(i < x.bi) {
+				if(x.ad[i] >= '0' || x.ad[i] <= '9')
+					p += ((pow(8, x.bi - i - 1)) * (x.bd[i] - 48));
+				else {
+					error = 1;
+					return x;
+				}
+				i++;
+			}
+			if(lflag == 1) {
+				i = 0;
+				while(i < x.ai) {
+					if(x.ad[i] >= '0' || x.ad[i] <= '9')
+						p += ((pow(8, -(1 + i))) * (x.ad[i] - 48));
+					else {
+						error = 1;
+						return x;
+					}
+					i++;
+				}
+			}
+			i = 0;
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + ((int)(p * 10) % 10);
+				p = p * 10;
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + ((int)(p * 10) % 10);
+				p = p * 10;
+				i++;
+			}
+			t.ai = 6;
+			t.ad[i] = '\0';
+			return t;/*bd*/
+			break;
+		case 'F':
+			x = solve('D', x, x);
+			x = solve('C', x, x);
+			return x;/*oh*/
+			break;
+		case 'G':
+			return x;/*db*/
+			break;
+		case 'H':
+			return x;/*do*/
+			break;
+		case 'I':
+			return x;/*dh*/
+			break;
+		case 'J':
+			t.bd[0] = '\0';
+			while(i < x.bi) {
+				switch(x.bd[i]) {
+					case '0':
+						strcat(t.bd, "0000");
+						break;
+					case '1':
+						strcat(t.bd, "0001");
+						break;
+					case '2':
+						strcat(t.bd, "0010");
+						break;
+					case '3':
+						strcat(t.bd, "0011");
+						break;
+					case '4':
+						strcat(t.bd, "0100");
+						break;
+					case '5':
+						strcat(t.bd, "0101");
+						break;
+					case '6':
+						strcat(t.bd, "0110");
+						break;
+					case '7':
+						strcat(t.bd, "0111");
+						break;
+					case '8':
+						strcat(t.bd, "1000");
+						break;
+					case '9':
+						strcat(t.bd, "1001");
+						break;
+					case 'A':
+						strcat(t.bd, "1010");
+						break;
+					case 'B':
+						strcat(t.bd, "1011");
+						break;
+					case 'C':
+						strcat(t.bd, "1100");
+						break;
+					case 'D':
+						strcat(t.bd, "1101");
+						break;
+					case 'E':
+						strcat(t.bd, "1110");
+						break;
+					case 'F':
+						strcat(t.bd, "1111");
+						break;
+					default :
+						error = 1;
+						break;
+				}
+				i++;
+			}
+			t.bi = 4 * x.bi;
+			if(lflag == 1) {
+				t.ad[0] = '\0';
+				while(i < x.ai) {
+					switch(x.bd[i]) {
+						case '0':
+							strcat(t.ad, "0000");
+							break;
+						case '1':
+							strcat(t.ad, "0001");
+							break;
+						case '2':
+							strcat(t.ad, "0010");
+							break;
+						case '3':
+							strcat(t.ad, "0011");
+							break;
+						case '4':
+							strcat(t.ad, "0100");
+							break;
+						case '5':
+							strcat(t.ad, "0101");
+							break;
+						case '6':
+							strcat(t.ad, "0110");
+							break;
+						case '7':
+							strcat(t.ad, "0111");
+							break;
+						case '8':
+							strcat(t.ad, "1000");
+							break;
+						case '9':
+							strcat(t.ad, "1001");
+							break;
+						case 'A':
+							strcat(t.ad, "1010");
+							break;
+						case 'B':
+							strcat(t.ad, "1011");
+							break;
+						case 'C':
+							strcat(t.ad, "1100");
+							break;
+						case 'D':
+							strcat(t.ad, "1101");
+							break;
+						case 'E':
+							strcat(t.ad, "1110");
+							break;
+						case 'F':
+							strcat(t.ad, "1111");
+							break;
+						default :
+							error = 1;
+							break;
+					}
+				i++;
+				}
+				t.ai = 4 * x.ai;
+			}
+			return t;/*hb*/
+			break;
+		case 'K':
+			x = solve('J', x, x);
+			x = solve('A', x, x);
+			return x;/*ho*/
+			break;
+		case 'L':
+			while(i < x.bi) {
+				if(x.ad[i] >= '0' && x.ad[i] <= '9')
+					p += ((pow(16, x.bi - i - 1)) * (x.bd[i] - 48));
+				else if(x.ad[i] >= 'A' && x.ad[i] <= 'F')
+					p += ((pow(16, x.bi - i - 1)) * (x.bd[i] - 'A' + 10));
+				else {
+					error = 1;
+					return x;
+				}
+				i++;
+			}
+			if(lflag == 1) {
+				i = 0;
+				while(i < x.ai) {
+					if(x.ad[i] >= '0' && x.ad[i] <= '9')
+						p += ((pow(16, -(1 + i))) * (x.ad[i] - 48));
+					else if(x.ad[i] >= 'A' && x.ad[i] <= 'F')
+						p += ((pow(16, -(1 + i))) * (x.ad[i] - 'A' + 10));
+					else {
+						error = 1;
+						return x;
+					}
+					i++;
+				}
+			}
+			i = 0;
+			while(p > 1) {
+				p = p / 10;
+				i++;
+			}
+			t.bd[i] = '\0';
+			t.bi = i;
+			j = 0;
+			while(i > j) {
+				t.bd[j] = 48 + ((int)(p * 10) % 10);
+				p = p * 10;
+				j++;
+			}
+			i = 0;
+			while(i < 6) {
+				t.ad[i] = 48 + ((int)(p * 10) % 10);
+				p = p * 10;
+				i++;
+			}
+			t.ai = 6;
+			t.ad[i] = '\0';
+			return t;/*bd*/
+			break;
 		default:
 			error = 1;
 			return x;
@@ -1418,6 +1718,8 @@ num infixeval(char *str) {
 	int reset = 1, h = 0, p, q;
 	while(1) {
 		t = getnext(str, &reset);
+		if(error == 1)
+			return x;
 		curtok = t->type;
 		if(curtok == pretok && pretok == OPERAND) {
 			error = 1;
@@ -1491,7 +1793,10 @@ num infixeval(char *str) {
 						}
 						else if(optr == 'a' || optr == 'b' || optr == 'c' || optr == 'd' || 
 						        optr == 'h' || optr == 'g' || optr == 'f' || optr == 'e' || 
-						        optr == 'i' || optr == 'j' || optr == 'k') {
+						        optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
+						        optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
+						        optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
+						        optr == 'J' || optr == 'K' || optr == 'L') {
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
@@ -1549,7 +1854,10 @@ num infixeval(char *str) {
 					optr = popc(&b);
 					if(optr == 'a' || optr == 'b' || optr == 'c' || optr == 'd' || 
 					   optr == 'h' || optr == 'g' || optr == 'f' || optr == 'e' || 
-					   optr == 'i' || optr == 'j' || optr == 'k') {
+					   optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
+					   optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
+					   optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
+					   optr == 'J' || optr == 'K' || optr == 'L') {
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
