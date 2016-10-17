@@ -48,6 +48,7 @@ token *getnext(char *arr, int *reset) {
 	char ope(char*);
 	int x;
 	char *expre;
+	static char optr = '\0';
 	token *t = (token *)malloc(sizeof(token));
 	if(currstate == ALPH) {
 		expre = (char *)malloc(sizeof(char) * 7);
@@ -74,9 +75,7 @@ token *getnext(char *arr, int *reset) {
 		switch(arr[i]) {
 			case '0': case '1': case '2': case '3':
 			case '4': case '5': case '6': case '7':
-			case '8': case '9': case '.': case 'A':
-			case 'B': case 'C': case 'D': case 'E':
-			case 'F':
+			case '8': case '9': case '.':
 				nextstate = DIG;
 				break;
 			case 'a': case 'b': case 'c': case 'd':
@@ -100,8 +99,14 @@ token *getnext(char *arr, int *reset) {
 				nextstate = SPC;
 				break;
 			default:
-				nextstate = ERR;
-				break;
+				if((optr == 'J' || optr == 'K' || optr == 'L') && arr[i] >= 'A' && arr[i] <= 'F') {
+					nextstate = DIG;
+					break;
+				}
+				else {
+					nextstate = ERR;
+					break;
+				}
 		}
 		switch(currstate) {
 			case SPC:
@@ -162,6 +167,7 @@ token *getnext(char *arr, int *reset) {
 					*(expre + x) = '\0';
 					t->type = OPERATOR;
 					t->op = ope(expre);
+					optr = t->op;
 					if(t->op == '1') {
 						t->type = ERROR;
 						currstate = nextstate;
@@ -836,8 +842,8 @@ num mod(num x, num y) {
 }
 
 num solve(char op, num x, num y) {
-	int flag = 0, i = 0, j;
-	char str[30];
+	int flag = 0, i = 0, j = 0;
+	char str[30], c;
 	str[0] = '.';
 	num res, t;
 	long double p = 0;
@@ -1506,13 +1512,69 @@ num solve(char op, num x, num y) {
 			return x;/*oh*/
 			break;
 		case 'G':
-			return x;/*db*/
+			p = atof(x.bd);
+			while(p) {
+				t.bd[i] = ((int)p % 2) + 48;
+				i++;
+				p = (int)(p / 2);
+			}
+			t.bi = i;
+			t.bd[i] = '\0';
+			i--;
+			while(i != j) {
+				c = t.bd[i];
+				t.bd[i] = t.bd[j];
+				t.bd[j] = c;
+				i--;
+				if(i == j)
+					break;
+				j++;
+			}
+			return t;/*db*/
 			break;
 		case 'H':
-			return x;/*do*/
+			p = atof(x.bd);
+			while(p) {
+				t.bd[i] = ((int)p % 8) + 48;
+				i++;
+				p = (int)(p / 8);
+			}
+			t.bi = i;
+			t.bd[i] = '\0';
+			i--;
+			while(i != j) {
+				c = t.bd[i];
+				t.bd[i] = t.bd[j];
+				t.bd[j] = c;
+				i--;
+				if(i == j)
+					break;
+				j++;
+			}
+			return t;/*do*/
 			break;
 		case 'I':
-			return x;/*dh*/
+			p = atof(x.bd);
+			while(p) {
+				t.bd[i] = ((int)p % 16) + 48;
+				if(t.bd[i] > '9')
+					t.bd[i] += 'A' - '9' - 1;
+				i++;
+				p = (int)(p / 16);
+			}
+			t.bi = i;
+			t.bd[i] = '\0';
+			i--;
+			while(i != j) {
+				c = t.bd[i];
+				t.bd[i] = t.bd[j];
+				t.bd[j] = c;
+				i--;
+				if(i == j)
+					break;
+				j++;
+			}
+			return t;/*dh*/
 			break;
 		case 'J':
 			t.bd[0] = '\0';
@@ -1642,9 +1704,9 @@ num solve(char op, num x, num y) {
 			break;
 		case 'L':
 			while(i < x.bi) {
-				if(x.ad[i] >= '0' && x.ad[i] <= '9')
+				if(x.bd[i] >= '0' && x.bd[i] <= '9')
 					p += ((pow(16, x.bi - i - 1)) * (x.bd[i] - 48));
-				else if(x.ad[i] >= 'A' && x.ad[i] <= 'F')
+				else if(x.bd[i] >= 'A' && x.bd[i] <= 'F')
 					p += ((pow(16, x.bi - i - 1)) * (x.bd[i] - 'A' + 10));
 				else {
 					error = 1;
@@ -1687,7 +1749,7 @@ num solve(char op, num x, num y) {
 			}
 			t.ai = 6;
 			t.ad[i] = '\0';
-			return t;/*bd*/
+			return t;/*hd*/
 			break;
 		default:
 			error = 1;
@@ -1719,6 +1781,8 @@ num infixeval(char *str) {
 	while(1) {
 		t = getnext(str, &reset);
 		if(error == 1)
+			return x;
+		if(t->type == ERR)
 			return x;
 		curtok = t->type;
 		if(curtok == pretok && pretok == OPERAND) {
