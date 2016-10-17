@@ -1,0 +1,51 @@
+PROJECT NAME : command line calculator (bc)
+
+USAGE : ./calc [ -option]
+
+OPTIONS :
+		Option		Description
+		-l    		trigonometric, log, ln and e^(expression) options
+		-h    		help and exit
+		--help		help and exit
+		
+DESCRIPTION :
+		This code can perform operaions in which final answer has less than 
+  	     30 digits before decimal point. calc reads from the standard input. A-
+  	     ll code is executed as it is read.
+  	     
+  	     Following operations can be performed by this program :
+  	     
+  	     addition(+), subtraction(-), multiplication(*),division(/), modulus(5)
+  	     ,exponent(^), equalto(==), greater than(>), greater than equal to(>=),
+  	     smaller than(<), smaller than equal to(>=),
+  	     
+  	     logical AND(&&), logical OR(||), logical NOT(!) 
+  	     
+  	     sine, cosine, tan, sec, cosec, cot, log(base 10), ln(natural logarithm
+  	     base 'e'), e^(expression), cuberoot, squareroot 
+  	     
+  	     
+  	     Precedence of operations is as follows :
+  	     
+  	     sin, cos, tan, sec, cosec, cot, sqrt, cbrt,base change		max
+  	     *, /, %, ^							        avg
+  	     +, -							       less
+  	     &&, ||, !, >, <, >=, <=, ==					min
+
+	     
+	     syntax for base change operations :
+	     
+	     binary to decimal			bd(expression)
+	     binary to octal			bo(expression)
+	     binary to hex			bh(expression)
+	     octal to binary			ob(expression)
+	     octal to decimal			od(expression)
+	     octal to hex			oh(expression)
+	     decimal to binary			db(expression)
+	     decimal to octal			do(expression)
+	     decimal to hex			dh(expression)
+	     hex to binary			hb(expression)
+	     hex to octal			ho(expression)
+	     hex to decimal			hd(expression)
+	     
+	     

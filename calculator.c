@@ -104,7 +104,7 @@ token *getnext(char *arr, int *reset) {
 			case 't': case 's': case 'r': case 'q':
 			case 'u': case 'v': case 'w': case 'x':
 			case 'y': case 'z': case '&': case '|':
-			case '>': case '<': case '=':
+			case '>': case '<': case '=': case '!':
 				nextstate = ALPH;
 				break;
 			case '+': case '-': case '*': case '/':
@@ -262,6 +262,8 @@ char ope (char *expr) {
 		return 'r';
 	else if(strcmp(expr, "==") == 0)
 		return 's';
+	else if(strcmp(expr, "!") == 0)
+		return 't';	
 	else if(strcmp(expr, "bo") == 0)
 		return 'A';		
 	else if(strcmp(expr, "bd") == 0)
@@ -310,13 +312,14 @@ int precedence(char b) {
 			break;
 		case 'a': case 'b': case 'c': case 'd':
 		case 'e': case 'f': case 'g': case 'h':
-		case 'k': case 'j': case 'i':		
+		case 'k': case 'j': case 'i': case 't':		
 		case 'A': case 'B': case 'C': case 'D':
 		case 'E': case 'F': case 'G': case 'H':
 		case 'I': case 'J': case 'K': case 'L':
 			return 3;
 			break;
 	}
+	return -2;
 }
 
 num add(num, num);
@@ -372,9 +375,12 @@ num getpi(num t) {
 num adz(num t, int i) {
 	if(i == 0)
 		return t; 
-	int j = t.bi;
-	while(j > -1)
-		t.bd[j + i] = t.bd[j--];
+	int j;
+	j = t.bi;
+	while(j > -1) {
+		t.bd[j + i] = t.bd[j];
+		j--;
+	}
 	j = 0;
 	t.bi += i; 
 	while(j < i)
@@ -1223,13 +1229,19 @@ num solve(char op, num x, num y) {
 			return t;
 			break;
 		case 'r':
+			error = 1;
 			return x;// '=' optr
 			break;
-		case 's':
+		case 's': case 't':
 			x = rmz(x);
 			y = rmz(y);
 			x = rmza(x);
 			y = rmza(y);
+			if(op == 't') {
+				if(x.bi != 0 || x.ai != 0)
+					t.bd[0] = '0';
+				return t;
+			}
 			if((x.bi != y.bi) || (x.ai != y.ai)) {
 				t.bd[0] = '0';
 				return t;
@@ -1790,7 +1802,7 @@ char ctop(stackc *b) {
 num infixeval(char *str) {
 	token *t;
 	num result, x, y;
-	int  pretok = 0, flag = 0, curtok = 0;
+	int  pretok = 0, curtok = 0;
 	stacki a;
 	initi(&a);
 	stackc b;
@@ -1858,6 +1870,10 @@ num infixeval(char *str) {
 				}
 				p = precedence(optr);
 				q = precedence(t->op);
+				if(p == -2 || q == -2) {
+					error = 1;
+					return x;
+				}
 				if(q > p) {
 					if(!fullc(&b))	
 						pushc(&b, t->op);
@@ -1879,7 +1895,7 @@ num infixeval(char *str) {
 						        optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
 						        optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
 						        optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
-						        optr == 'J' || optr == 'K' || optr == 'L') {
+						        optr == 'J' || optr == 'K' || optr == 'L' || optr == 't') {
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
@@ -1940,7 +1956,7 @@ num infixeval(char *str) {
 					   optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
 					   optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
 					   optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
-					   optr == 'J' || optr == 'K' || optr == 'L') {
+					   optr == 'J' || optr == 'K' || optr == 'L' || optr == 't') {
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
@@ -1992,7 +2008,7 @@ num infixeval(char *str) {
 }
 
 void printusage() {
-	printf("usage:  ./a.out  [option]\n\noption\tdescription\n-l    \ttrigonometric, log, ln and e^(expression) options\n-h    \thelp and exit\n--help\thelp and exit\n");
+	printf("usage:  ./calc  [option]\n\noption\tdescription\n-l    \ttrigonometric, log, ln and e^(expression) options\n-h    \thelp and exit\n--help\thelp and exit\n");
 }
 
 int main(int argc,char *argv[]) {
