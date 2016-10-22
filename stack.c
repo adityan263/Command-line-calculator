@@ -1,5 +1,5 @@
 #include "stack.h"
-
+#include <stdlib.h>
 
 
 
@@ -24,6 +24,24 @@ void initi(stacki *s) {
 }
 
 
+num initnum(num p){
+	p.bd = (char *)malloc(sizeof(char) * 30);
+	p.ad = (char *)malloc(sizeof(char) * 30);
+	p.sign = p.ai = p.bi = 0;
+	p.blimit = p.alimit = 30;
+	p.bd[0] = p.ad[0] = '\0';
+	return p;
+}
+num areinitnum(num p) {
+	p.alimit += 50;
+	p.ad = (char *)realloc(p.ad, sizeof(char) * p.alimit);
+	return p;
+}
+num breinitnum(num p) {
+	p.blimit += 50;
+	p.bd = (char *)realloc(p.bd, sizeof(char) * p.blimit);
+	return p;
+}
 
 
 void pushc(stackc *s, char op) {
