@@ -13,9 +13,10 @@ OPTIONS :
 		--help		help and exit
 		
 DESCRIPTION :
-		This code can perform operaions in which final answer has less than 
-  	     30 digits before decimal point. calc reads from the standard input. A-
-  	     ll code is executed as it is read.
+		This is a command line calculator which supports arbitrary precisi-
+	     on numbers. One expression can have at the most 128 operaotors and 128 
+	     operands. It reads from the standard input. All operations are execut-
+	     ed according to their precedence.
   	     
   	     Following operations can be performed by this program :
   	     
