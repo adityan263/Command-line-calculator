@@ -21,7 +21,7 @@ DESCRIPTION :
   	     
   	     Following operations can be performed by this program :
   	     
-  	     addition(+), subtraction(-), multiplication(*),division(/), modulus(5)
+  	     addition(+), subtraction(-), multiplication(*),division(/), modulus(%)
   	     ,exponent(^), equalto(==), greater than(>), greater than equal to(>=),
   	     smaller than(<), smaller than equal to(>=),
   	     
