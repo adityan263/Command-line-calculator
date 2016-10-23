@@ -30,7 +30,7 @@ DESCRIPTION :
   	     sine, cosine, tan, sec, cosec, cot, log(base 10), ln(natural logarithm
   	     base 'e'), e^(expression), cuberoot, squareroot 
   	     
-  	     ++(pre), --(pre), +=, -=, *=, /=
+  	     ++, --, +=, -=, *=, /=
   	     
   	     Precedence of operations is as follows :
   	     
@@ -57,6 +57,16 @@ DESCRIPTION :
 	     hex to octal			ho(expression)
 	     hex to decimal			hd(expression)
 	     
+	     other:
+	     sin				sin(expression)
+	     cos				cos(expression)
+	     tan				tan(expression)
+	     cot				cot(expression)
+	     sec				sec(expression)
+	     cosec				cosec(expression)
+	     log				log(expression)
+	     log(base e)			ln(expression)
+	     e^					exp(expression)
 	       It can handle variables too. Variable name must be a single character.
 	     Small letters from 'a' to 'z' and capital letters from 'G'  to  'Z'  are 
 	     allowed to be used as variables. Alpabets from 'A' to 'F' are not allow-
