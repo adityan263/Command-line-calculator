@@ -21,13 +21,28 @@ int readline(char *arr, int len) {
 
 #define OPERAND 10 
 #define OPERATOR 20
-#define	END	30
-#define ERROR	40
+#define VARIABLE 30
+#define	END	40
+#define ERROR	50
+
+
 typedef struct token {
 	int type;
 	num number;
 	char op;
 }token;
+
+num variable[46];
+
+
+void initvar() {
+	int i = 0;
+	for(i = 0; i < 46; i++) {
+		variable[i] = initnum(variable[i]);
+		variable[i].bd[0] = '0';
+		variable[i].bi = 1;
+	}
+}
 
 
 enum states { SPC, DIG, OPR, ALPH, STOP, ERR };
@@ -46,8 +61,8 @@ token *getnext(char *arr, int *reset) {
 	num a;
 	a = initnum(a);
 	char operator(char*);
-	int x;
-	char *expre;
+	int x, y;
+	char *expre, *opr;
 	static char optr = '\0';
 	token *t = (token *)malloc(sizeof(token));
 	if(currstate == ALPH) {
@@ -55,6 +70,12 @@ token *getnext(char *arr, int *reset) {
 		x = 0;
 		*(expre + x) = arr[i - 1];
 		x++;
+	}
+	if(currstate == OPR) {
+		opr = (char *)malloc(sizeof(char) * 4);
+		y = 0;
+		*(opr + y) = arr[i - 1];
+		y++;
 	}
 	if(arr[i - 1] == '.') {
 		dflag = 1;
@@ -84,12 +105,18 @@ token *getnext(char *arr, int *reset) {
 			case 'm': case 'n': case 'o': case 'p':
 			case 't': case 's': case 'r': case 'q':
 			case 'u': case 'v': case 'w': case 'x':
-			case 'y': case 'z': case '&': case '|':
-			case '>': case '<': case '=':
+			case 'y': case 'z': case 'G': case 'H':
+			case 'L': case 'K': case 'J': case 'I':
+			case 'M': case 'N': case 'O': case 'P':
+			case 'T': case 'S': case 'R': case 'Q':
+			case 'U': case 'V': case 'W': case 'X':
+			case 'Y': case 'Z':
 				nextstate = ALPH;
 				break;
 			case '+': case '-': case '*': case '/':
 			case '%': case '(': case ')': case '^':
+			case '&': case '|': case '>': case '<': 
+			case '=':
 				nextstate = OPR;
 				break;
 			case '\0':
@@ -128,6 +155,12 @@ token *getnext(char *arr, int *reset) {
 					expre = (char *)malloc(sizeof(char) * 7);
 					*(expre + x) = arr[i];
 					x++;
+				}		
+				else if(nextstate == OPR) {
+					y = 0;
+					opr = (char *)malloc(sizeof(char) * 4);
+					*(opr + y) = arr[i];
+					y++;
 				}		
 				break;
 			case DIG:
@@ -173,9 +206,16 @@ token *getnext(char *arr, int *reset) {
 					t->op = operator(expre);
 					optr = t->op;
 					if(t->op == '1') {
-						t->type = ERROR;
-						currstate = nextstate;
-						return t;
+						if(strlen(expre) != 1)
+							t->type = ERROR;
+						else {
+							t->type = OPERAND;
+							a.bd[0] = '0';
+							a.bi = 1;
+							a.v = expre[0];
+							a.var = 1;
+							t->number = a;
+						}
 					}
 					free(expre);
 					i++;
@@ -184,11 +224,23 @@ token *getnext(char *arr, int *reset) {
 				}
 				break;
 			case OPR:
-				t->type = OPERATOR;
-				t->op = arr[i - 1];	
-				currstate = nextstate;
-				i++;
-				return t;
+				if(nextstate == OPR) {
+					*(opr + y) = arr[i];
+					y++;
+				}
+				else {
+					*(opr + y) = '\0';
+					t->type = OPERATOR;
+					t->op = operator(opr);
+					optr = t->op;
+					if(t->op == '1') {
+						t->type = ERROR;
+					}
+					free(opr);
+					currstate = nextstate;
+					i++;
+					return t;
+				}
 				break;
 			case STOP:
 				t->type = END;
@@ -276,6 +328,34 @@ char operator (char *expr) {
 		return 'K';
 	else if(strcmp(expr, "hd") == 0)
 		return 'L';
+	else if(strcmp(expr, "+") == 0)
+		return '+';
+	else if(strcmp(expr, "-") == 0)
+		return '-';
+	else if(strcmp(expr, "/") == 0)
+		return '/';
+	else if(strcmp(expr, "*") == 0)
+		return '*';
+	else if(strcmp(expr, "^") == 0)
+		return '^';
+	else if(strcmp(expr, "%") == 0)
+		return '%';
+	else if(strcmp(expr, "(") == 0)
+		return '(';
+	else if(strcmp(expr, ")") == 0)
+		return ')';
+	else if(strcmp(expr, "++") == 0)
+		return 'M';
+	else if(strcmp(expr, "--") == 0)
+		return 'N';
+	else if(strcmp(expr, "+=") == 0)
+		return 'O';
+	else if(strcmp(expr, "-=") == 0)
+		return 'P';
+	else if(strcmp(expr, "*=") == 0)
+		return 'Q';
+	else if(strcmp(expr, "/=") == 0)
+		return 'R';
 	else
 		return '1';
 }
@@ -317,7 +397,7 @@ num mul(num, num);
 num divi(num, num);
 num mod(num, num);
 
-/*returns value of n * pi i.e. 3.14 * 10^29*/
+/*returns variable of n * pi i.e. 3.14 * 10^29*/
 num getpi(num t) {
 	t.bd[0] = '3';
 	t.bd[1] = '1';
@@ -977,6 +1057,52 @@ num solve(char op, num x, num y) {
 	str[0] = '.';
 	num res, t;
 	long double p = 0;
+	if(op != 'r' && y.var == 1) {
+		y.var = 0;
+		if(y.v >= 'a' && y.v <= 'z') {
+			strcpy(y.bd, variable[y.v - 'a'].bd);
+			y.bi = variable[y.v - 'a'].bi;
+			y.sign = variable[y.v - 'a'].sign;
+			strcpy(y.ad, variable[y.v - 'a'].ad);
+			y.ai = variable[y.v - 'a'].ai;
+			y.alimit = variable[y.v - 'a'].alimit;
+			y.blimit = variable[y.v - 'a'].blimit;
+		}
+		else if(y.v >= 'G' && y.v <= 'Z') {
+			strcpy(y.bd, variable[y.v - 'G' + 26].bd);
+			y.bi = variable[y.v - 'G' + 26].bi;
+			y.sign = variable[y.v - 'G' + 26].sign;
+			strcpy(y.ad, variable[y.v - 'G' + 26].ad);
+			y.ai = variable[y.v - 'G' + 26].ai;
+			y.alimit = variable[y.v - 'G' + 26].alimit;
+			y.blimit = variable[y.v - 'G' + 26].blimit;
+		}
+		else
+			error = 1;
+	}
+	if(x.var == 1) {
+		x.var = 0;
+		if(x.v >= 'a' && x.v <= 'z') {
+			strcpy(x.bd, variable[x.v - 'a'].bd);
+			x.bi = variable[x.v - 'a'].bi;
+			x.sign = variable[x.v - 'a'].sign;
+			strcpy(y.ad, variable[x.v - 'a'].ad);
+			x.ai = variable[x.v - 'a'].ai;
+			x.alimit = variable[x.v - 'a'].alimit;
+			x.blimit = variable[x.v - 'a'].blimit;
+		}
+		else if(x.v >= 'G' && x.v <= 'Z') {
+			strcpy(x.bd, variable[x.v - 'G' + 26].bd);
+			x.bi = variable[x.v - 'G' + 26].bi;
+			x.sign = variable[x.v - 'G' + 26].sign;
+			strcpy(x.ad, variable[x.v - 'G' + 26].ad);
+			x.ai = variable[x.v - 'G' + 26].ai;
+			x.alimit = variable[x.v - 'G' + 26].alimit;
+			x.blimit = variable[x.v - 'G' + 26].blimit;
+		}
+		else
+			error = 1;
+	}
 	switch(op) {
 		case '+':
 			return add(x, y);
@@ -1414,6 +1540,28 @@ num solve(char op, num x, num y) {
 			return t;
 			break;
 		case 'r':
+			if(y.var == 0)
+				error = 1;
+			else {
+				if(x.v >= 'a' && x.v <= 'z') {
+					strcpy(variable[x.v - 'a'].bd, x.bd);
+					variable[x.v - 'a'].bi = x.bi;
+					variable[x.v - 'a'].sign = x.sign;
+					strcpy(variable[x.v - 'a'].ad, x.ad);
+					variable[x.v - 'a'].ai = x.ai;
+					variable[x.v - 'a'].alimit = x.alimit;
+					variable[x.v - 'a'].blimit = x.blimit;
+				}
+				else if(x.v >= 'G' && x.v <= 'Z') {
+					strcpy(variable[x.v - 'G' + 26].bd, x.bd);
+					variable[x.v - 'G' + 26].bi = x.bi;
+					variable[x.v - 'G' + 26].sign = x.sign;
+					strcpy(variable[x.v - 'G' + 26].ad, x.ad);
+					variable[x.v - 'G' + 26].ai = x.ai;
+					variable[x.v - 'G' + 26].alimit = x.alimit;
+					variable[x.v - 'G' + 26].blimit = x.blimit;
+				}
+			}
 			return x;// '=' optr
 			break;
 		case 's': case 't':
@@ -2034,6 +2182,24 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;/*hd*/
 			break;
+		case 'M':
+			return x;/*++*/
+			break;
+		case 'N':
+			return x;/*--*/
+			break;
+		case 'O':
+			return x;/*+=*/
+			break;
+		case 'P':
+			return x;/*-=*/
+			break;
+		case 'Q':
+			return x;/**=*/
+			break;
+		case 'R':
+			return x;/*/=*/
+			break;
 		default:
 			error = 1;
 			return x;
@@ -2148,7 +2314,8 @@ num infixeval(char *str) {
 						        optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
 						        optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
 						        optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
-						        optr == 'J' || optr == 'K' || optr == 'L') {
+						        optr == 'J' || optr == 'K' || optr == 'L' || optr == 'M' ||
+							optr == 'N') {
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
@@ -2194,11 +2361,6 @@ num infixeval(char *str) {
 				}
 			}
 			else {
-				 
-				if(t->op == 'r' && !emptyi(&a)) {
-					error = 1;
-					return x;
-				}
 				pushc(&b, t->op);
 			}
 		}
@@ -2211,7 +2373,8 @@ num infixeval(char *str) {
 					   optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
 					   optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
 					   optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
-					   optr == 'J' || optr == 'K' || optr == 'L') {
+					   optr == 'J' || optr == 'K' || optr == 'L' || optr == 'M' ||
+					   optr == 'N') {
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
@@ -2266,6 +2429,7 @@ void printusage() {
 int main(int argc,char *argv[]) {
 	char str[128];
 	int q = 1;
+	initvar();
 	while(q < argc) {
 		if((strcmp(argv[q], "-h") == 0) || (strcmp(argv[q], "--help") == 0)) {
 			printusage();
@@ -2285,6 +2449,15 @@ int main(int argc,char *argv[]) {
 	num infixeval(char *infix);
 	while(printf("> ") && (x = readline(str, 128))) {
 		ans = infixeval(str);
+		if(ans.var == 1) {
+			if(ans.v >= 'a' && ans.v <= 'z') {
+				ans = variable[(int)(ans.v - 'a')];
+			}
+			else if(ans.v >= 'A' && ans.v <= 'Z')
+				ans = variable[ans.v - 'A' + 26];
+			else
+				error = 1;
+		}
 		if(error == 1) {
 			if(stackfull == 1) {
 				fprintf(stderr, "exprression is too long ... stack is full\n");
@@ -2307,10 +2480,14 @@ int main(int argc,char *argv[]) {
 			else {
 				puts(ans.bd);				
 			}
-		}
+		}	
 		dflag = 0;
 		free(ans.bd);
 		free(ans.ad);
+	}
+	for(x = 0;x < 46; x++) {
+		free((variable)[x].bd);
+		free((variable)[x].ad);
 	}
 	return 0;
 }

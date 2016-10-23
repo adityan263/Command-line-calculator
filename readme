@@ -9,6 +9,7 @@ USAGE : ./project [ -option]
 OPTIONS :
 		Option		Description
 		-l    		trigonometric, log, ln and e^(expression) options
+				operations on floats
 		-h    		help and exit
 		--help		help and exit
 		
@@ -29,6 +30,7 @@ DESCRIPTION :
   	     sine, cosine, tan, sec, cosec, cot, log(base 10), ln(natural logarithm
   	     base 'e'), e^(expression), cuberoot, squareroot 
   	     
+  	     ++(pre), --(pre), +=, -=, *=, /=
   	     
   	     Precedence of operations is as follows :
   	     
@@ -37,6 +39,8 @@ DESCRIPTION :
   	     +, -							       less
   	     &&, ||, !, >, <, >=, <=, ==					min
 
+	        Operations like sine, cos, tan, log, e^ etc. can be performed in -l
+	     mode only.
 	     
 	     syntax for base change operations :
 	     
@@ -53,4 +57,9 @@ DESCRIPTION :
 	     hex to octal			ho(expression)
 	     hex to decimal			hd(expression)
 	     
-	     
+	       It can handle variables too. Variable name must be a single character.
+	     Small letters from 'a' to 'z' and capital letters from 'G'  to  'Z'  are 
+	     allowed to be used as variables. Alpabets from 'A' to 'F' are not allow-
+	     d as they are used as digits in hexagecimal numbers. Default  values  of
+	     variables are set to zero.
+	     (code of ++, --, +=, -=, *=, /= is not written yet)

@@ -27,7 +27,7 @@ void initi(stacki *s) {
 num initnum(num p){
 	p.bd = (char *)malloc(sizeof(char) * 30);
 	p.ad = (char *)malloc(sizeof(char) * 30);
-	p.sign = p.ai = p.bi = 0;
+	p.sign = p.ai = p.bi = p.var = 0;
 	p.blimit = p.alimit = 30;
 	p.bd[0] = p.ad[0] = '\0';
 	return p;

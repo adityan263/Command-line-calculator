@@ -1,9 +1,12 @@
 #define MAX 128
 
 
+
+
+
 typedef struct num{
-	char *bd, *ad;
-	int bi, ai, sign, blimit, alimit;
+	char *bd, *ad, v;
+	int bi, ai, sign, blimit, alimit, var;
 }num;
 
 
