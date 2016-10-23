@@ -62,4 +62,4 @@ DESCRIPTION :
 	     allowed to be used as variables. Alpabets from 'A' to 'F' are not allow-
 	     d as they are used as digits in hexagecimal numbers. Default  values  of
 	     variables are set to zero.
-	     (code of ++, --, +=, -=, *=, /= is not written yet)
+	     (code of ++, -- is not written yet)

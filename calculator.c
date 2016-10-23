@@ -1058,7 +1058,6 @@ num solve(char op, num x, num y) {
 	num res, t;
 	long double p = 0;
 	if(op != 'r' && y.var == 1) {
-		y.var = 0;
 		if(y.v >= 'a' && y.v <= 'z') {
 			strcpy(y.bd, variable[y.v - 'a'].bd);
 			y.bi = variable[y.v - 'a'].bi;
@@ -1081,12 +1080,11 @@ num solve(char op, num x, num y) {
 			error = 1;
 	}
 	if(x.var == 1) {
-		x.var = 0;
 		if(x.v >= 'a' && x.v <= 'z') {
 			strcpy(x.bd, variable[x.v - 'a'].bd);
 			x.bi = variable[x.v - 'a'].bi;
 			x.sign = variable[x.v - 'a'].sign;
-			strcpy(y.ad, variable[x.v - 'a'].ad);
+			strcpy(x.ad, variable[x.v - 'a'].ad);
 			x.ai = variable[x.v - 'a'].ai;
 			x.alimit = variable[x.v - 'a'].alimit;
 			x.blimit = variable[x.v - 'a'].blimit;
@@ -1543,23 +1541,23 @@ num solve(char op, num x, num y) {
 			if(y.var == 0)
 				error = 1;
 			else {
-				if(x.v >= 'a' && x.v <= 'z') {
-					strcpy(variable[x.v - 'a'].bd, x.bd);
-					variable[x.v - 'a'].bi = x.bi;
-					variable[x.v - 'a'].sign = x.sign;
-					strcpy(variable[x.v - 'a'].ad, x.ad);
-					variable[x.v - 'a'].ai = x.ai;
-					variable[x.v - 'a'].alimit = x.alimit;
-					variable[x.v - 'a'].blimit = x.blimit;
+				if(y.v >= 'a' && y.v <= 'z') {
+					strcpy(variable[y.v - 'a'].bd, x.bd);
+					variable[y.v - 'a'].bi = x.bi;
+					variable[y.v - 'a'].sign = x.sign;
+					strcpy(variable[y.v - 'a'].ad, x.ad);
+					variable[y.v - 'a'].ai = x.ai;
+					variable[y.v - 'a'].alimit = x.alimit;
+					variable[y.v - 'a'].blimit = x.blimit;
 				}
-				else if(x.v >= 'G' && x.v <= 'Z') {
-					strcpy(variable[x.v - 'G' + 26].bd, x.bd);
-					variable[x.v - 'G' + 26].bi = x.bi;
-					variable[x.v - 'G' + 26].sign = x.sign;
-					strcpy(variable[x.v - 'G' + 26].ad, x.ad);
-					variable[x.v - 'G' + 26].ai = x.ai;
-					variable[x.v - 'G' + 26].alimit = x.alimit;
-					variable[x.v - 'G' + 26].blimit = x.blimit;
+				else if(y.v >= 'G' && y.v <= 'Z') {
+					strcpy(variable[y.v - 'G' + 26].bd, x.bd);
+					variable[y.v - 'G' + 26].bi = x.bi;
+					variable[y.v - 'G' + 26].sign = x.sign;
+					strcpy(variable[y.v - 'G' + 26].ad, x.ad);
+					variable[y.v - 'G' + 26].ai = x.ai;
+					variable[y.v - 'G' + 26].alimit = x.alimit;
+					variable[y.v - 'G' + 26].blimit = x.blimit;
 				}
 			}
 			return x;// '=' optr
@@ -2188,17 +2186,54 @@ num solve(char op, num x, num y) {
 		case 'N':
 			return x;/*--*/
 			break;
-		case 'O':
-			return x;/*+=*/
-			break;
-		case 'P':
-			return x;/*-=*/
-			break;
-		case 'Q':
-			return x;/**=*/
-			break;
-		case 'R':
-			return x;/*/=*/
+		case 'O': case 'P': case 'Q': case 'R':
+			if(y.var == 0) {
+				error = 1;
+				return y;
+			}
+			c = y.v;
+			switch(op) {
+				case 'O':
+					y = add(x, y);
+					break;
+				case 'P':
+					y = sub(x, y);
+					break;
+				case 'Q':
+					y = mul(x, y);
+					break;
+				case 'R':
+					x = rmz(x);
+					if(x.bi == 0 && x.ai == 0) {
+						printf("division by 0 \n");
+						error = 1;
+						free(x.bd);
+						free(x.ad);
+						return y;
+					}
+					else
+						y = divi(x, y);
+					break;
+			}
+			if(c >= 'a' && c <= 'z') {
+				strcpy(variable[c - 'a'].bd, y.bd);
+				variable[c - 'a'].bi = y.bi;
+				variable[c - 'a'].sign = y.sign;
+				strcpy(variable[c - 'a'].ad, y.ad);
+				variable[c - 'a'].ai = y.ai;
+				variable[c - 'a'].alimit = y.alimit;
+				variable[c - 'a'].blimit = y.blimit;
+			}
+			else if(c >= 'G' && c <= 'Z') {
+				strcpy(variable[c - 'G' + 26].bd, y.bd);
+				variable[c - 'G' + 26].bi = y.bi;
+				variable[c - 'G' + 26].sign = y.sign;
+				strcpy(variable[c - 'G' + 26].ad, y.ad);
+				variable[c - 'G' + 26].ai = y.ai;
+				variable[c - 'G' + 26].alimit = y.alimit;
+				variable[c - 'G' + 26].blimit = y.blimit;
+			}
+			return y;
 			break;
 		default:
 			error = 1;
@@ -2450,11 +2485,25 @@ int main(int argc,char *argv[]) {
 	while(printf("> ") && (x = readline(str, 128))) {
 		ans = infixeval(str);
 		if(ans.var == 1) {
+			ans.var = 0;
 			if(ans.v >= 'a' && ans.v <= 'z') {
-				ans = variable[(int)(ans.v - 'a')];
+				strcpy(ans.bd, variable[ans.v - 'a'].bd);
+				ans.bi = variable[ans.v - 'a'].bi;
+				ans.sign = variable[ans.v - 'a'].sign;
+				strcpy(ans.ad, variable[ans.v - 'a'].ad);
+				ans.ai = variable[ans.v - 'a'].ai;
+				ans.alimit = variable[ans.v - 'a'].alimit;
+				ans.blimit = variable[ans.v - 'a'].blimit;
 			}
-			else if(ans.v >= 'A' && ans.v <= 'Z')
-				ans = variable[ans.v - 'A' + 26];
+			else if(ans.v >= 'G' && ans.v <= 'Z') {
+				strcpy(ans.bd, variable[ans.v - 'G' + 26].bd);
+				ans.bi = variable[ans.v - 'G' + 26].bi;
+				ans.sign = variable[ans.v - 'G' + 26].sign;
+				strcpy(ans.ad, variable[ans.v - 'G' + 26].ad);
+				ans.ai = variable[ans.v - 'G' + 26].ai;
+				ans.alimit = variable[ans.v - 'G' + 26].alimit;
+				ans.blimit = variable[ans.v - 'G' + 26].blimit;
+			}
 			else
 				error = 1;
 		}
