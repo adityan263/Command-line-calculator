@@ -67,9 +67,15 @@ DESCRIPTION :
 	     log				log(expression)
 	     log(base e)			ln(expression)
 	     e^					exp(expression)
+	     
+	     Variables:
+	     
 	       It can handle variables too. Variable name must be a single character.
 	     Small letters from 'a' to 'z' and capital letters from 'G'  to  'Z'  are 
 	     allowed to be used as variables. Alpabets from 'A' to 'F' are not allow-
 	     d as they are used as digits in hexagecimal numbers. Default  values  of
 	     variables are set to zero.
 	     (code of ++, -- is not written yet)
+	     Limitation: Can not calculate logarithm and e^() of numbers having more 
+	     than 38 digits. Same is the problem with bd(), od(), hd() functions but
+	     here input can have more than 38 digits and output can't. 
