@@ -416,7 +416,7 @@ num mul(num, num);
 num divi(num, num);
 num mod(num, num);
 
-/*returns variable of n * pi i.e. 3.14 * 10^29*/
+/*returns variable of n * pi i.e. 3.14 * 10^28*/
 num getpi(num t) {
 	t.bd[0] = '3';
 	t.bd[1] = '1';
@@ -1044,21 +1044,23 @@ num solve(char op, num x, num y) {
 			else {
 				t = initnum(t);
 				t.bi = 1;
-				t.bd[0] = '1';
+				t.bd[0] = '2';
 				t.bd[1] = '\0';
 				pwr = 1;
 				if(x.sign == 0) {
 					res = y;
+					x.bd[x.bi - 1]++;
 					x = sub(t, x);
 					while(x.bi > 0) {
-						res = mul(res, y);
-						x = sub(t, x);
+						if(x.bd[x.bi - 1] % 2 == 1)
+							res = mul(res, y);
+						x = divi(t, x);
+						y = mul(y, y);
 						x = rmz(x);y = rmz(y);
 					}
 				}
 				else {
 					res = t;
-					x.sign = 0;
 					while(x.bi > 0) {
 						res = divi(y, res);
 						x = sub(t, x);
