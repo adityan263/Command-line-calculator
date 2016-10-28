@@ -935,6 +935,7 @@ num solve(char op, num x, num y) {
 	int flag = 0, i = 0, j = 0;
 	char str[30], c;
 	str[0] = '.';
+	str[1] = '\0';
 	num res, t;
 	long double p = 0;
 	if(op != 'r' && y.var == 1) {
@@ -1193,11 +1194,11 @@ num solve(char op, num x, num y) {
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
 			if(op == 'g')
-				p = log(p) / log(10);
+				p = logl(p) / log(10);
 			else if(op == 'h')
-				p = log(p);
+				p = logl(p);
 			else
-				p = exp(p);
+				p = expl(p);
 			i = 0;
 			if(p < 0) {
 				t.sign = 1;
@@ -2066,7 +2067,7 @@ num infixeval(char *str) {
 		if(t->type == ERR)
 			return x;
 		curtok = t->type;
-		if(curtok == pretok && pretok == OPERAND) {
+		if(curtok == pretok && pretok == OPERAND && t->op != '(' && t->op != ')') {
 			error = 1;
 			return x;
 		}
@@ -2253,14 +2254,72 @@ num infixeval(char *str) {
 	free(t);
 }
 
+void printans(num ans) {
+	if(ans.var == 1) {
+		ans.var = 0;
+		if(ans.v >= 'a' && ans.v <= 'z') {
+			strcpy(ans.bd, variable[ans.v - 'a'].bd);
+			ans.bi = variable[ans.v - 'a'].bi;
+			ans.sign = variable[ans.v - 'a'].sign;
+			strcpy(ans.ad, variable[ans.v - 'a'].ad);
+			ans.ai = variable[ans.v - 'a'].ai;
+			ans.alimit = variable[ans.v - 'a'].alimit;
+			ans.blimit = variable[ans.v - 'a'].blimit;
+		}
+		else if(ans.v >= 'G' && ans.v <= 'Z') {
+			strcpy(ans.bd, variable[ans.v - 'G' + 26].bd);
+			ans.bi = variable[ans.v - 'G' + 26].bi;
+			ans.sign = variable[ans.v - 'G' + 26].sign;
+			strcpy(ans.ad, variable[ans.v - 'G' + 26].ad);
+			ans.ai = variable[ans.v - 'G' + 26].ai;
+			ans.alimit = variable[ans.v - 'G' + 26].alimit;
+			ans.blimit = variable[ans.v - 'G' + 26].blimit;
+		}
+		else
+			error = 1;
+	}
+	if(error == 1) {
+		if(stackfull == 1) {
+			fprintf(stderr, "exprression is too long ... stack is full\n");
+			stackfull = 0;
+		}
+		else
+			fprintf(stderr, "Error in expression\n");
+		error = 0;
+	}
+	else {
+		if(ans.sign == 1) 
+			printf("-");
+		if(ans.bi == 0)
+			printf("0");
+		if((dflag == 1 || lflag == 1) && (ans.ai != 0)) {
+			strcat(ans.bd, ".");
+			strcat(ans.bd, ans.ad);
+			puts(ans.bd);
+		}	
+		else {
+			puts(ans.bd);				
+		}
+	}
+	dflag = 0;
+	free(ans.bd);
+	free(ans.ad);
+}
 void printusage() {
-	printf("usage:  ./project  [option]\n\noption\tdescription\n-l    \ttrigonometric, log, ln and e^(expression) options\n-h    \thelp and exit\n--help\thelp and exit\n");
+	printf("usage:  ./project  [option] [filename]\n\noption\tdescription\n-l    \ttrigonometric, log, ln and e^(expression) options\n-h    \thelp and exit\n--help\thelp and exit\n");
 }
 
 int main(int argc,char *argv[]) {
-	char str[128];
+	char str[128], *o;
+	o = &str[0];
 	int q = 1;
 	initvar();
+	num ans;
+	int x;
+	size_t b = 128;
+	ssize_t z;
+	FILE *fp;
+	num infixeval(char *infix);
 	while(q < argc) {
 		if((strcmp(argv[q], "-h") == 0) || (strcmp(argv[q], "--help") == 0)) {
 			printusage();
@@ -2269,66 +2328,30 @@ int main(int argc,char *argv[]) {
 		else if(strcmp(argv[q], "-l") == 0)
 			lflag = 1;
 		else {
-			printf("invalid option ... '%s'\n", argv[q]);
-			printusage();
-			return 0;
+			fp = fopen(argv[q], "r");
+			if(fp == NULL) {
+				if(argv[q][0] == '-') {
+					printf("invalid option ... '%s'\n", argv[q]);
+					printusage();
+					return 0;
+				}
+				else {
+					printf("Error: %s :No such file exists\n", argv[q]);
+					return 0;
+				}
+			}
+			while((z = getline(&o, &b, fp)) != -1) {
+				str[strlen(str) - 1] = '\0';
+				ans = infixeval(str);
+				printans(ans);
+			}
+			fclose(fp);
 		}
 		q++;
 	}
-	num ans;
-	int x;
-	num infixeval(char *infix);
 	while(printf("> ") && (x = readline(str, 128))) {
 		ans = infixeval(str);
-		if(ans.var == 1) {
-			ans.var = 0;
-			if(ans.v >= 'a' && ans.v <= 'z') {
-				strcpy(ans.bd, variable[ans.v - 'a'].bd);
-				ans.bi = variable[ans.v - 'a'].bi;
-				ans.sign = variable[ans.v - 'a'].sign;
-				strcpy(ans.ad, variable[ans.v - 'a'].ad);
-				ans.ai = variable[ans.v - 'a'].ai;
-				ans.alimit = variable[ans.v - 'a'].alimit;
-				ans.blimit = variable[ans.v - 'a'].blimit;
-			}
-			else if(ans.v >= 'G' && ans.v <= 'Z') {
-				strcpy(ans.bd, variable[ans.v - 'G' + 26].bd);
-				ans.bi = variable[ans.v - 'G' + 26].bi;
-				ans.sign = variable[ans.v - 'G' + 26].sign;
-				strcpy(ans.ad, variable[ans.v - 'G' + 26].ad);
-				ans.ai = variable[ans.v - 'G' + 26].ai;
-				ans.alimit = variable[ans.v - 'G' + 26].alimit;
-				ans.blimit = variable[ans.v - 'G' + 26].blimit;
-			}
-			else
-				error = 1;
-		}
-		if(error == 1) {
-			if(stackfull == 1) {
-				fprintf(stderr, "exprression is too long ... stack is full\n");
-				stackfull = 0;
-			}
-			else
-				fprintf(stderr, "Error in expression\n");
-			error = 0;
-		}
-		else {
-			if(ans.sign == 1) 
-				printf("-");
-			if(ans.bi == 0)
-				printf("0");
-			if((dflag == 1 || lflag == 1) && (ans.ai != 0)) {
-				strcat(ans.bd, ".");
-				strcat(ans.bd, ans.ad);
-				puts(ans.bd);
-			}	
-			else {
-				puts(ans.bd);				
-			}
-		}	
-		dflag = 0;
-		free(ans.bd);
-		free(ans.ad);
+		printans(ans);
 	}
 	for(x = 0;x < 46; x++) {
 		free((variable)[x].bd);

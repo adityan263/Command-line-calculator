@@ -4,7 +4,7 @@ MIS : 111508076
   
 PROJECT NAME : command line calculator (bc)
 
-USAGE : ./project [ -option]
+USAGE : ./project [ -option] [filename]
 
 OPTIONS :
 		Option		Description
@@ -18,6 +18,11 @@ DESCRIPTION :
 	     on numbers. One expression can have at the most 128 operaotors and 128 
 	     operands. It reads from the standard input. All operations are execut-
 	     ed according to their precedence.
+  	     
+  	     	It can evaluate expressions in text files too. It can handle one or
+  	     more than one files. It evaluates expressions the in file in the given
+  	     order. It evaluates each file in the order they are provided as argum-
+  	     ents.
   	     
   	     Following operations can be performed by this program :
   	     
@@ -75,6 +80,8 @@ DESCRIPTION :
 	     allowed to be used as variables. Alpabets from 'A' to 'F' are not allow-
 	     d as they are used as digits in hexagecimal numbers. Default  values  of
 	     variables are set to zero.
+	     
+	       You must put a space between two consecutive brackets.
 	     (code of ++, -- is not written yet)
 	     Limitation: Can not calculate logarithm and e^() of numbers having more 
 	     than 38 digits. Same is the problem with bd(), od(), hd() functions but
