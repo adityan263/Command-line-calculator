@@ -85,7 +85,7 @@ token *getnext(char *arr, int *reset) {
 	static char optr = '\0';
 	token *t = (token *)malloc(sizeof(token));
 	if(currstate == ALPH) {
-		expre = (char *)malloc(sizeof(char) * 7);
+		expre = (char *)malloc(sizeof(char) * 9);
 		x = 0;
 		*(expre + x) = arr[i - 1];
 		x++;
@@ -171,7 +171,7 @@ token *getnext(char *arr, int *reset) {
 				}
 				else if(nextstate == ALPH) {
 					x = 0;
-					expre = (char *)malloc(sizeof(char) * 7);
+					expre = (char *)malloc(sizeof(char) * 9);
 					*(expre + x) = arr[i];
 					x++;
 				}		
@@ -323,6 +323,10 @@ char operator (char *expr) {
 		return 's';
 	else if(strcmp(expr, "!") == 0)
 		return 't';
+	else if(strcmp(expr, "floor") == 0)
+		return 'u';
+	else if(strcmp(expr, "ceiling") == 0)
+		return 'v';
 	else if(strcmp(expr, "bo") == 0)
 		return 'A';		
 	else if(strcmp(expr, "bd") == 0)
@@ -404,6 +408,8 @@ int precedence(char b) {
 		case 'A': case 'B': case 'C': case 'D':
 		case 'E': case 'F': case 'G': case 'H':
 		case 'I': case 'J': case 'K': case 'L':
+		case 'S': case 'T': case 'U': case 'V':
+		case 'u': case 'v':
 			return 3;
 			break;
 	}
@@ -1444,6 +1450,23 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
+		case 'u':case 'v':
+			t = initnum(t);
+			t.bi = 1;
+			t.bd[0] = '1';
+			t.bd[1] = '\0';
+			if(x.sign == 1) {
+				if(op == 'u')
+					op = 'v';
+				else
+					op = 'u';
+			}
+			if(op == 'v' && x.ai != 0)
+				x = add(x, t);
+			x.ai = 0;
+			x.ad[0] = '\0';
+			return x;
+			break;
 		case 'A':
 			t = initnum(t);
 			t.bi = 1;
@@ -2032,6 +2055,76 @@ num solve(char op, num x, num y) {
 			}
 			return y;
 			break;
+		case 'S': case 'U':
+			if(y.var != 1) {
+				error = 1;
+				return y;
+			}
+			t = initnum(t);
+			t.bi = 1;
+			t.bd[0] = '1';
+			t.bd[1] = '\0';
+			c = y.v;
+			ope = 1;
+			y = add(y, t);
+			if(c >= 'a' && c <= 'z') {
+				strcpy(variable[c - 'a'].bd, y.bd);
+				variable[c - 'a'].bi = y.bi;
+				variable[c - 'a'].sign = y.sign;
+				strcpy(variable[c - 'a'].ad, y.ad);
+				variable[c - 'a'].ai = y.ai;
+				variable[c - 'a'].alimit = y.alimit;
+				variable[c - 'a'].blimit = y.blimit;
+			}
+			else if(c >= 'G' && c <= 'Z') {
+				strcpy(variable[c - 'G' + 26].bd, y.bd);
+				variable[c - 'G' + 26].bi = y.bi;
+				variable[c - 'G' + 26].sign = y.sign;
+				strcpy(variable[c - 'G' + 26].ad, y.ad);
+				variable[c - 'G' + 26].ai = y.ai;
+				variable[c - 'G' + 26].alimit = y.alimit;
+				variable[c - 'G' + 26].blimit = y.blimit;
+			}
+			ope = 0;
+			if(op == 'U')
+				y = sub(t, y);
+			return y;
+			break;
+		case 'T': case'V':
+			if(y.var != 1) {
+				error = 1;
+				return y;
+			}
+			t = initnum(t);
+			t.bi = 1;
+			t.bd[0] = '1';
+			t.bd[1] = '\0';
+			c = y.v;
+			ope = 1;
+			y = sub(t, y);
+			if(c >= 'a' && c <= 'z') {
+				strcpy(variable[c - 'a'].bd, y.bd);
+				variable[c - 'a'].bi = y.bi;
+				variable[c - 'a'].sign = y.sign;
+				strcpy(variable[c - 'a'].ad, y.ad);
+				variable[c - 'a'].ai = y.ai;
+				variable[c - 'a'].alimit = y.alimit;
+				variable[c - 'a'].blimit = y.blimit;
+			}
+			else if(c >= 'G' && c <= 'Z') {
+				strcpy(variable[c - 'G' + 26].bd, y.bd);
+				variable[c - 'G' + 26].bi = y.bi;
+				variable[c - 'G' + 26].sign = y.sign;
+				strcpy(variable[c - 'G' + 26].ad, y.ad);
+				variable[c - 'G' + 26].ai = y.ai;
+				variable[c - 'G' + 26].alimit = y.alimit;
+				variable[c - 'G' + 26].blimit = y.blimit;
+			}
+			ope = 0;
+			if(op == 'V')
+				y = add(t, y);
+			return y;
+			break;
 		default:
 			error = 1;
 			return x;
@@ -2109,10 +2202,19 @@ num infixeval(char *str) {
 			}
 		}
 		else if (t->type == OPERATOR) {
-			if(t->op == '(')
-				h++;
-			else if(t->op == ')')
-				h--;
+			switch(t->op) {
+				case '(':
+					h++;
+					break;
+				case ')':
+					h--;
+					break;
+				case 'M':case 'N':
+					t->op += 'S' - 'M'; 
+					if(pretok == OPERAND)
+						(t->op) += 2;
+					break;
+			}
 			if(!emptyc(&b)) {
 				optr = ctop(&b);
 				if(t->op == 'r') {
@@ -2146,8 +2248,9 @@ num infixeval(char *str) {
 						        optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
 						        optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
 						        optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
-						        optr == 'J' || optr == 'K' || optr == 'L' || optr == 'M' ||
-							optr == 'N') {
+						        optr == 'J' || optr == 'K' || optr == 'L' || optr == 'T' ||
+							optr == 'S' || optr == 'u' || optr == 'v' || optr == 'U' ||
+							optr == 'V') {
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
@@ -2205,8 +2308,9 @@ num infixeval(char *str) {
 					   optr == 'i' || optr == 'j' || optr == 'k' || optr == 'A' ||
 					   optr == 'B' || optr == 'C' || optr == 'D' || optr == 'E' || 
 					   optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
-					   optr == 'J' || optr == 'K' || optr == 'L' || optr == 'M' ||
-					   optr == 'N') {
+					   optr == 'J' || optr == 'K' || optr == 'L' || optr == 'S' ||
+					   optr == 'T' || optr == 'u' || optr == 'v' || optr == 'U' ||
+					   optr == 'V') {
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
