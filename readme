@@ -73,6 +73,9 @@ DESCRIPTION :
 	     log				log(expression)
 	     log(base e)			ln(expression)
 	     e^					exp(expression)
+	     floor				floor(expression)
+	     ceiling				ceiling(expression)
+	     
 	     
 	     Variables:
 	     
