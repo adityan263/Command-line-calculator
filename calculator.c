@@ -136,7 +136,7 @@ token *getnext(char *arr, int *reset, int lflag, int *dflag) {
 			case '+': case '-': case '*': case '/':
 			case '%': case '(': case ')': case '^':
 			case '&': case '|': case '>': case '<': 
-			case '=':
+			case '=': case '!':
 				nextstate = OPR;
 				break;
 			case '\0':
@@ -627,6 +627,7 @@ num add(num x, num y, int ope, int pwr) {
 		free(y.bd);
 		free(y.ad);
 	}
+	res.sign = y.sign;
 	return res;
 }
 num sub(num x, num y, int ope, int pwr) {
@@ -722,6 +723,7 @@ num sub(num x, num y, int ope, int pwr) {
 			}
 			i--;
 		}
+		res.sign = y.sign;
 	}
 	else {							/*x > y*/
 		/*before decimal subtraction*/
@@ -752,9 +754,11 @@ num sub(num x, num y, int ope, int pwr) {
 			}
 			i--;
 		}
-		res.sign = 1;
+		if(!x.sign)
+			res.sign = 1;
 	}
 	res = rmz(res);
+	
 	if(pwr == 0 && ope == 0) {
 		free(y.bd);
 		free(y.ad);
@@ -1132,6 +1136,8 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			/*convert to long double*/
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
+			if(x.sign == 1)
+				p *= -1;
 			/*find sine*/
 			switch(op) {
 				case 'a':
@@ -1178,6 +1184,8 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			ope = 0;
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
+			if(x.sign == 1)
+				p *= -1;
 			switch(op) {
 				case 'c':
 					p = tanl(p);
@@ -1230,6 +1238,8 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			}
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
+			if(x.sign == 1)
+				p *= -1;
 			if(op == 'g')
 				p = logl(p) / log(10);
 			else if(op == 'h')
@@ -1279,10 +1289,12 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			}
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
+			if(x.sign == 1)
+				p *= -1;
 			if(op == 'j')
-				p = sqrt(p);
+				p = sqrtl(p);
 			else
-				p = cbrt(p);
+				p = cbrtl(p);
 			i = 0;
 			if(p < 0) {
 				t.sign = 1;
@@ -1494,13 +1506,15 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			t.bd[0] = '1';
 			t.bd[1] = '\0';
 			if(x.sign == 1) {
-				if(op == 'u')
+				if(op == 'u') {
 					op = 'v';
+					t.sign = 1;
+				}
 				else
 					op = 'u';
 			}
 			if(op == 'v' && x.ai != 0)
-				x = add(x, t, ope, pwr);
+				x = add(t, x, ope, pwr);
 			x.ai = 0;
 			x.ad[0] = '\0';
 			return x;
@@ -1662,6 +1676,7 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			}
 			t.bi = 3 * x.bi;
 			if(lflag == 1) {
+				i = 0;
 				t = adza(t, x.ai * 3);
 				t.ad[0] = '\0';
 				while(i < x.ai) {
@@ -1896,10 +1911,11 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			}
 			t.bi = 4 * x.bi;
 			if(lflag == 1) {
+				i = 0;
 				t = adza(t, x.ai * 4);
 				t.ad[0] = '\0';
 				while(i < x.ai) {
-					switch(x.bd[i]) {
+					switch(x.ad[i]) {
 						case '0':
 							strcat(t.ad, "0000");
 							break;
@@ -2103,9 +2119,10 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			ope = 0;
 			if(op == 'U')
 				y = sub(t, y, ope, pwr);
+			y.var = 0;
 			return y;
 			break;
-		case 'T': case'V':				/* -- pre and post */
+		case 'T': case 'V':				/* -- pre and post */
 			if(y.var != 1) {
 				*error = 1;
 				return y;
@@ -2140,6 +2157,7 @@ num solve(char op, num x, num y, int lflag, int *error) {
 			ope = 0;
 			if(op == 'V')
 				y = add(t, y, ope, pwr);
+			y.var = 0;
 			return y;
 			break;
 		default:
@@ -2176,7 +2194,7 @@ num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 			return x;
 		curtok = t->type;
 		/*if there are two consecutive operators*/
-		if(curtok == pretok && pretok == OPERAND && t->op != '(' && t->op != ')') {
+		if(curtok == pretok && t->op != '-' && t->op != '(' && t->op != ')') {
 			*error = 1;
 			return x;
 		}
@@ -2189,6 +2207,7 @@ num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 				x.bd[1] = '\0';
 				x.sign = 1;
 				pushi(&a, x);
+				pushc(&b, '*');
 			}
 			else {
 				*error = 1;
@@ -2260,7 +2279,7 @@ num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 						        optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
 						        optr == 'J' || optr == 'K' || optr == 'L' || optr == 'T' ||
 							optr == 'S' || optr == 'u' || optr == 'v' || optr == 'U' ||
-							optr == 'V') {		/*unary operators*/
+							optr == 'V' || optr == 't') {		/*unary operators*/
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
@@ -2320,7 +2339,7 @@ num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 					   optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
 					   optr == 'J' || optr == 'K' || optr == 'L' || optr == 'S' ||
 					   optr == 'T' || optr == 'u' || optr == 'v' || optr == 'U' ||
-					   optr == 'V') {			/*unary operators*/
+					   optr == 'V' || optr == 't') {			/*unary operators*/
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
@@ -2400,7 +2419,6 @@ void printans(num ans, int lflag, int dflag, int error, int stackfull) {
 		}
 		else
 			fprintf(stderr, "Error in expression\n");
-		error = 0;
 	}
 	else {
 		ans = rmz(ans);
@@ -2410,17 +2428,16 @@ void printans(num ans, int lflag, int dflag, int error, int stackfull) {
 		if(ans.bi == 0)
 			printf("0");
 		if((dflag == 1 || lflag == 1) && (ans.ai != 0)) {
-			strcat(ans.bd, ".");
-			strcat(ans.bd, ans.ad);
-			puts(ans.bd);
+			printf("%s.%s\n", ans.bd, ans.ad);
 		}	
 		else {
 			puts(ans.bd);				
 		}
 	}
 	dflag = 0;
-	free(ans.bd);
 	free(ans.ad);
+	free(ans.bd);
+	
 }
 void printusage() {
 	printf("usage:  ./project  [option] [filename]\n\noption\tdescription\n-l    \ttrigonometric, log, ln and e^(expression) options\n-h    \thelp and exit\n--help\thelp and exit\n");
@@ -2461,14 +2478,16 @@ int main(int argc, char *argv[]) {
 				str[strlen(str) - 1] = '\0';
 				ans = infixeval(str, lflag, &dflag, &error, &stackfull);
 				printans(ans, lflag, dflag, error, stackfull);
+				error = 0;
 			}
 			fclose(fp);
 		}
 		q++;
 	}
-	while(printf("> ") && (x = readline(str, 128))) {
+	while(printf("\n> ") && (x = readline(str, 128))) {
 		ans = infixeval(str, lflag, &dflag, &error, &stackfull);
 		printans(ans, lflag, dflag, error, stackfull);
+		error = 0;
 	}
 	for(x = 0;x < 46; x++) {
 		free((variable)[x].bd);
