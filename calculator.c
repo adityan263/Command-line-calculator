@@ -23,8 +23,14 @@
 #include <limits.h>
 #include "stack.h"
 #include <math.h>
-  
-int lflag = 0, dflag = 0, stackfull = 0, error = 0, ope = 0, pwr = 0;
+
+
+#define OPERAND 10 
+#define OPERATOR 20
+#define VARIABLE 30
+#define	END	40
+#define ERROR	50
+
 
 /*reads line from the terminal and converts it to a string*/
 int readline(char *arr, int len) {
@@ -38,12 +44,6 @@ int readline(char *arr, int len) {
 	return i;
 }
 
-#define OPERAND 10 
-#define OPERATOR 20
-#define VARIABLE 30
-#define	END	40
-#define ERROR	50
-
 
 typedef struct token {
 	int type;
@@ -51,9 +51,10 @@ typedef struct token {
 	char op;
 }token;
 
+/*46 variables (a to z) and (G to Z)*/
 num variable[46];
 
-
+/*Deafault value of all variables is set to 0*/
 void initvar() {
 	int i = 0;
 	for(i = 0; i < 46; i++) {
@@ -67,7 +68,7 @@ void initvar() {
 enum states { SPC, DIG, OPR, ALPH, STOP, ERR };
 
 /*converts string into tokens*/
-token *getnext(char *arr, int *reset) {
+token *getnext(char *arr, int *reset, int lflag, int *dflag) {
 	static int currstate = SPC;
 	int nextstate;
 	int d1flag = 0; 
@@ -79,7 +80,7 @@ token *getnext(char *arr, int *reset) {
 	}
 	num a;
 	a = initnum(a);
-	char operator(char*);
+	char operator(char*, int);
 	int x, y;
 	char *expre, *opr;
 	static char optr = '\0';
@@ -97,7 +98,7 @@ token *getnext(char *arr, int *reset) {
 		y++;
 	}
 	if(arr[i - 1] == '.') {
-		dflag = 1;
+		*dflag = 1;
 		d1flag = 1;
 	}
 	if(currstate == DIG) {
@@ -157,7 +158,7 @@ token *getnext(char *arr, int *reset) {
 		switch(currstate) {
 			case SPC:
 				if(arr[i] == '.') {
-					dflag = 1;
+					*dflag = 1;
 					d1flag = 1;
 					break;
 				}
@@ -184,7 +185,7 @@ token *getnext(char *arr, int *reset) {
 				break;
 			case DIG:
 				if(arr[i] == '.') {
-					dflag = 1;
+					*dflag = 1;
 					d1flag = 1;
 					break;
 				}
@@ -222,7 +223,7 @@ token *getnext(char *arr, int *reset) {
 				else {
 					*(expre + x) = '\0';
 					t->type = OPERATOR;
-					t->op = operator(expre);
+					t->op = operator(expre, lflag);
 					optr = t->op;
 					if(t->op == '1') {
 						if(strlen(expre) != 1)
@@ -250,7 +251,7 @@ token *getnext(char *arr, int *reset) {
 				else {
 					*(opr + y) = '\0';
 					t->type = OPERATOR;
-					t->op = operator(opr);
+					t->op = operator(opr, lflag);
 					optr = t->op;
 					if(t->op == '1') {
 						t->type = ERROR;
@@ -278,9 +279,9 @@ token *getnext(char *arr, int *reset) {
 }
 
 /*assigns unique character to each operation
- *these characters are later used as operators 
+ *these characters are later used as operator 
  */
-char operator (char *expr) {
+char operator (char *expr, int lflag) {
 	if(lflag == 1) {
 		if(strcmp(expr, "sin") == 0)
 			return 'a';
@@ -416,14 +417,15 @@ int precedence(char b) {
 	return -2;
 }
 
-num add(num, num);
-num sub(num, num);
-num mul(num, num);
-num divi(num, num);
-num mod(num, num);
+num add(num, num, int, int);
+num sub(num, num, int, int);
+num mul(num, num, int);
+num divi(num, num, int, int, int);
+num mod(num, num, int, int);
 
-/*returns variable of n * pi i.e. 3.14 * 10^28*/
+/*returns variable of n * pi i.e. (3.14 * 10 ^ 37)*/
 num getpi(num t) {
+	t = breinitnum(t);
 	t.bd[0] = '3';
 	t.bd[1] = '1';
 	t.bd[2] = '4';
@@ -453,20 +455,30 @@ num getpi(num t) {
 	t.bd[26] = '8';
 	t.bd[27] = '3';
 	t.bd[28] = '2';
-	t.bd[29] = '\0';
-	t.bi = 30;
+	t.bd[29] = '7';
+	t.bd[30] = '9';
+	t.bd[31] = '5';
+	t.bd[32] = '0';
+	t.bd[33] = '2';
+	t.bd[34] = '8';
+	t.bd[35] = '8';
+	t.bd[36] = '4';
+	t.bd[37] = '1';
+	t.bd[38] = '\0';
+	t.bi = 38;
 	return t;
 }
 
-/*adds 'i' zeros before given number
- *e.g. adz(15, 2) returns 0015
+/*adz => add zero
+ *adds 'i' zeros before given number
+ *e.g. adz(15, 2) returns (0015)
  */
 num adz(num t, int i) {
 	if(i == 0)
 		return t; 
 	int j = t.bi;
 	while(i + t.bi >= t.blimit)
-		t = breinitnum(t);
+		t = breinitnum(t);		/*if no. of digits exceed default limit then reinitiate bd string*/
 	while(j > -1) {
 		t.bd[j + i] = t.bd[j];
 		j--;
@@ -478,13 +490,14 @@ num adz(num t, int i) {
 	return t;
 }
 
-/*adds 'i' zeros at end of given number
- *e.g. adza(15.23, 2) returns 15.2300
+/*adza => add zero after(decimal)
+ *adds 'i' zeros at end of given number
+ *e.g. adza(15.23, 2) returns (15.2300)
  */
 num adza(num t, int i) {
 	int j = 0;
 	while(i + t.ai >= t.alimit)
-		t = areinitnum(t);
+		t = areinitnum(t);		/*if no. of digits exceeds default limit then reinitiate ad string*/
 	while(j < i)
 		t.ad[t.ai + j++] = '0';
 	t.ad[t.ai + i] = '\0';
@@ -492,7 +505,8 @@ num adza(num t, int i) {
 	return t;
 }
 
-/*removes zeros before given number
+/*rmz => remove zero
+ *removes zeros before given number
  *e.g. adz(000015) returns 15
  */
 num rmz(num t) {
@@ -523,6 +537,9 @@ num rmza(num t) {
 	return t;
 }
 
+/*in multiplication sometimes character gets too big (> 255)
+ *to avoid printing unknown characters carry needs to be cleared
+ */
 num carryclr(num res, int k) {
 	int m;
 	while(k > 0) {
@@ -536,35 +553,31 @@ num carryclr(num res, int k) {
 	return res;
 }
 
-num add(num x, num y) {
+num add(num x, num y, int ope, int pwr) {
 	if(x.sign != y.sign) {
 		if(x.sign == 1) {
 			x.sign = 0;
-			return sub(x, y);
+			return sub(x, y, ope, pwr);
 		}
 		else {
 			y.sign = 0;
-			return sub(y, x);
+			return sub(y, x, ope, pwr);
 		}
 	}
 	int i = 0, flag = 0;
 	num res;
 	res = initnum(res);
-	if(x.ai >= y.ai) {
+	/*addition of after decimal digits*/
+	if(x.ai >= y.ai)
 		res = adza(res, x.ai);
-		while(i < y.ai) {
-			res.ad[i] = x.ad[i] + y.ad[i] - '0';
-			i++;
-		}
-	}
-	else {
+	else
 		res = adza(res, y.ai);
-		while(i < x.ai) {
-			res.ad[i] = x.ad[i] + y.ad[i] - '0';
-			i++;
-		}	
-	}
+	while(i < x.ai) {
+		res.ad[i] = x.ad[i] + y.ad[i] - '0';
+		i++;
+	}	
 	i--;
+	/*clear carry for after decimal part*/
 	while(i > 0) {
 		if(res.ad[i] > '9') {
 			res.ad[i - 1]++;
@@ -582,6 +595,9 @@ num add(num x, num y) {
 		i = y.bi - 1;
 		x = adz(x, y.bi - x.bi);
 	}
+	/*addition of before decimal part
+	 *first digit of res is reserved for carry
+	 */
 	while(i > -1) {
 		res.bd[i + 1] = x.bd[i] + y.bd[i] - '0';
 		if(flag == 1) {
@@ -613,28 +629,30 @@ num add(num x, num y) {
 	}
 	return res;
 }
-num sub(num x, num y) {
+num sub(num x, num y, int ope, int pwr) {
 	if(x.sign != y.sign) {
 		if(x.sign == 1) {
 			x.sign = 0;
-			return add(x, y);
+			return add(x, y, ope, pwr);
 		}
 		else {
 			x.sign = 1;
-			return add(x, y);
+			return add(x, y, ope, pwr);
 		}	
 	}
 	num res;
 	res = initnum(res);
 	x = rmz(x);
 	y = rmz(y);
-	int i = 0, bflag = 0, flag = 0;
+	int i = 0, bflag = 0, flag = 0;/*bflag => borrow flag*/
 	i = 0;
+	/*find bigger number to decide sign of result*/
 	if(x.bi > y.bi)
 		flag = 2;
 	else if(y.bi > x.bi)
 		flag = 1;
 	else {
+		/*if both numbers have same no. of digits then compare digit by digit*/
 		while(i < x.bi) {
 			if(x.bd[i] > y.bd[i]) {
 				flag = 2;
@@ -646,6 +664,7 @@ num sub(num x, num y) {
 			}
 			i++;
 		}
+		/*if before decimal part is same compare after decimal digits*/
 		if(flag == 0) {
 			i = 0;
 			while(i < x.ai) {
@@ -668,12 +687,14 @@ num sub(num x, num y) {
 		x = adza(x, i * -1);
 	res = adza(res, y.ai);
 	i = y.ai - 1;
+	/*if both no.s are equal retun zero*/
 	if(flag == 0) {
 		res.bi = 1;
 		res.bd[0] = '0';
 		res.bd[1] = '\0';
 	}
 	else if(flag == 1) {				/*y > x*/
+		/*subtraction of after decimal part*/
 		while(i > -1) {
 			res.ad[i] = y.ad[i] - x.ad[i] + '0';
 			if(bflag == 1)
@@ -689,6 +710,7 @@ num sub(num x, num y) {
 		x = adz(x, y.bi - x.bi);
 		res = adz(res, y.bi);
 		i = y.bi - 1;
+		/*subtraction of after decimal part*/
 		while(i > -1) {
 			res.bd[i] = y.bd[i] - x.bd[i] + '0';
 			if(bflag == 1)
@@ -702,6 +724,7 @@ num sub(num x, num y) {
 		}
 	}
 	else {							/*x > y*/
+		/*before decimal subtraction*/
 		while(i > -1) {
 			res.ad[i] = x.ad[i] - y.ad[i] + '0';
 			if(bflag == 1)
@@ -717,6 +740,7 @@ num sub(num x, num y) {
 		i = x.bi - 1;
 		res = adz(res, x.bi);
 		y = adz(y, x.bi - y.bi);
+		/*after decimal subtraction*/
 		while(i > -1) {
 			res.bd[i] = x.bd[i] - y.bd[i] + '0';
 			if(bflag == 1)
@@ -740,10 +764,11 @@ num sub(num x, num y) {
 	return res;
 }
 
-num mul(num x, num y) {
+num mul(num x, num y, int pwr) {
 	num res;
 	res = initnum(res);
 	int i = 0, j = 0, m;
+	/*join bd and ad part*/
 	strcat(x.bd, x.ad);
 	strcat(y.bd, y.ad);
 	if(x.bi + x.ai > y.bi + y.ai)
@@ -751,6 +776,7 @@ num mul(num x, num y) {
 	else if(x.bi + x.ai < y.bi + y.ai)
 		x = adz(x, y.bi + y.ai - x.bi - x.ai);
 	res = adz(res, x.bi + x.ai + y.ai + y.bi);
+	/*multiplication*/
 	while(i < y.bi + y.ai) {
 		j = 0;
 		while(j < x.bi + x.ai) {
@@ -763,6 +789,7 @@ num mul(num x, num y) {
 		}
 		i++;
 	}
+	/*fix decimal point*/
 	i = x.bi + y.bi + x.ai + y.ai - 1;
 	res = carryclr(res, i);
 	res.ai = x.ai + y.ai;
@@ -788,10 +815,10 @@ num mul(num x, num y) {
 	}
 	return rmz(res);
 }
-num divi(num x, num y) {
+num divi(num x, num y, int lflag, int ope, int pwr) {
 	num q, r, b;
-	q = initnum(q);
-	r = initnum(r);
+	q = initnum(q);/*quotient*/
+	r = initnum(r);/*remainder*/
 	b = initnum(b);
 	strcat(x.bd, x.ad);
 	strcat(y.bd, y.ad);
@@ -815,19 +842,21 @@ num divi(num x, num y) {
 		strcpy(b.bd, r.bd);
 		strcpy(b.ad, r.ad);
 		b.bi = r.bi;
-		b.ai = r.ai;b.sign = r.sign;
-		while(b.sign == 0) {
+		b.ai = r.ai;
+		b.sign = r.sign;
+		while(b.sign == 0) {			/*while( b is positive )*/
 			x = rmz(x);
-			b = sub(x, b);
+			b = sub(x, b, ope, pwr);	/* b = b - x */
 			j++;
 		}
-		r = add(x, b);
+		r = add(x, b, ope, pwr);
 		q.bd[i] = j + 48;
 		i++;
 	}
 	q.bd[i] = '\0';
 	q.bi = i;
 	r = rmz(r);
+	/*find fractional part*/
 	if(lflag == 1 && r.bi != 0) {
 		i = 0;
 		while(i < 7) {
@@ -840,10 +869,10 @@ num divi(num x, num y) {
 			b.bi = r.bi;
 			b.ai = r.ai;b.sign = r.sign;
 			while(b.sign == 0) {
-				b = sub(x, b);
+				b = sub(x, b, ope, pwr);
 				j++;
 			}
-			r = add(x, b);;
+			r = add(x, b, ope, pwr);
 			q.bd[q.bi + i] = j + 48;
 			i++;
 		}
@@ -878,11 +907,12 @@ num divi(num x, num y) {
 	}
 	return rmz(q);
 }
-num mod(num x, num y) {
+num mod(num x, num y, int ope, int pwr) {
 	num r, b;
 	r = initnum(r);
 	b = initnum(b);
 	int i = 0, j, k;
+	/*same as division just returns different number*/
 	if(x.ai > y.ai) {
 		k = x.ai;
 		j = x.ai - y.ai;
@@ -902,7 +932,7 @@ num mod(num x, num y) {
 	y.bi += y.ai;
 	x.ai = y.ai = 0;
 	x.ad[0] = y.ad[0] = '\0';
-	ope = 1;	
+	ope = 1;
 	while(i < y.bi) {
 		j = -1;
 		r.bd[r.bi] = y.bd[i];
@@ -910,10 +940,10 @@ num mod(num x, num y) {
 		r.bi ++;
 		b = r;
 		while(b.sign == 0) {
-			b = sub(x, b);
+			b = sub(x, b, ope, pwr);
 			j++;
 		}
-		r = add(x, b);
+		r = add(x, b, ope, pwr);
 		i++;
 	}
 	r.bi -= k;
@@ -937,13 +967,14 @@ num mod(num x, num y) {
 }
 
 /*does all operations*/
-num solve(char op, num x, num y) {
-	int flag = 0, i = 0, j = 0;
+num solve(char op, num x, num y, int lflag, int *error) {
+	int flag = 0, i = 0, j = 0, pwr = 0, ope = 0;
 	char str[30], c;
 	str[0] = '.';
 	str[1] = '\0';
 	num res, t;
 	long double p = 0;
+	/*if y is a variable convert to number*/
 	if(op != 'r' && y.var == 1) {
 		if(y.v >= 'a' && y.v <= 'z') {
 			strcpy(y.bd, variable[y.v - 'a'].bd);
@@ -964,8 +995,9 @@ num solve(char op, num x, num y) {
 			y.blimit = variable[y.v - 'G' + 26].blimit;
 		}
 		else
-			error = 1;
+			*error = 1;
 	}
+	/*if x is a variable*/
 	if(x.var == 1) {
 		if(x.v >= 'a' && x.v <= 'z') {
 			strcpy(x.bd, variable[x.v - 'a'].bd);
@@ -986,53 +1018,53 @@ num solve(char op, num x, num y) {
 			x.blimit = variable[x.v - 'G' + 26].blimit;
 		}
 		else
-			error = 1;
+			*error = 1;
 	}
 	switch(op) {
-		case '+':
-			return add(x, y);
+		case '+':					/* y + x */
+			return add(x, y, ope, pwr);
 			break;
-		case '-':
-			return sub(x, y);
+		case '-':					/* y - x */
+			return sub(x, y, ope, pwr);
 			break;
-		case '*':
-			return mul(x, y);
+		case '*':					/* y * x */
+			return mul(x, y, pwr);
 			break;
-		case '/':
+		case '/':					/* y / x */
 			x = rmz(x);
 			if(x.bi == 0 && x.ai == 0) {
 				printf("division by 0 \n");
-				error = 1;
+				*error = 1;
 				free(x.bd);
 				free(x.ad);
 				return y;
 			}
 			else
-				return divi(x, y);
+				return divi(x, y, lflag, ope, pwr);
 			break;
-		case '%':
+		case '%':					/* y % x */
 			x = rmz(x);
 			if(x.bi == 0 && x.ai == 0) {
 				printf("mod by 0 \n");
-				error = 1;
+				*error = 1;
 				free(y.bd);
 				free(y.ad);
 				return x;
 			}
 			else
-				return mod(x, y);
+				return mod(x, y, ope, pwr);
 			break;
-		case '^':
+		case '^':					/* y ^ x */
 			x = rmz(x);
 			x = rmza(x);
 			if(x.ai != 0) {
 				printf("exponent must be integer");
-				error = 1;
+				*error = 1;
 				free(y.bd);
 				free(y.ad);
 				return x;
 			}
-			else if(x.bi == 0) {
+			else if(x.bi == 0) {			/*if exponent is 0 return 1*/
 				t = initnum(t);
 				t.bi = 1;
 				t.bd[0] = '1';
@@ -1044,33 +1076,34 @@ num solve(char op, num x, num y) {
 				return t;
 			}
 			else if(x.bi == 1 && x.bd[0] == '1' && x.sign == 0) {
-				free(x.bd);
+				free(x.bd);			/* if x = 1 return y */
 				free(x.ad);
 				return y;
 			}
 			else {
 				t = initnum(t);
-				t.bi = 1;
+				t.bi = 1;			/* t = 2 */
 				t.bd[0] = '2';
 				t.bd[1] = '\0';
 				pwr = 1;
-				if(x.sign == 0) {
+				if(x.sign == 0) {		/* x is positive */
 					res = y;
 					x.bd[x.bi - 1]++;
-					x = sub(t, x);
-					while(x.bi > 0) {
+					x = sub(t, x, ope, pwr);
+					while(x.bi > 0) {	/* y ^ x with logarithmic time complexity*/
 						if(x.bd[x.bi - 1] % 2 == 1)
-							res = mul(res, y);
-						x = divi(t, x);
-						y = mul(y, y);
-						x = rmz(x);y = rmz(y);
+							res = mul(res, y, pwr);
+						x = divi(t, x, lflag, ope, pwr);
+						y = mul(y, y, pwr);
+						x = rmz(x);
+						y = rmz(y);
 					}
 				}
-				else {
+				else {				/* x is negative */
 					res = t;
 					while(x.bi > 0) {
-						res = divi(y, res);
-						x = sub(t, x);
+						res = divi(y, res, lflag, ope, pwr);
+						x = sub(t, x, ope, pwr);
 						x = rmz(x);
 					}
 				}
@@ -1083,32 +1116,32 @@ num solve(char op, num x, num y) {
 			free(y.bd);
 			free(y.ad);
 			return res;
-			break;			
-		case 'a': case 'b':
+			break;	
+		case 'a': case 'b':					/*sin and cos*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
+			ope = 1;
+			/*subtract n*pi till x is has > 38 digits */
 			if(x.bi > 38) {
 				t = getpi(t);
 				while(x.bi > 38) {
-					x = sub(t, x);
+					x = sub(t, x, ope, pwr);
 					x = rmz(x);
 				}
-				t.bi = 1;
-				t.bd[0] = 1;
-				t.bd[1] = '\0';
 			}
+			ope = 0;
+			/*convert to long double*/
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
+			/*find sine*/
 			switch(op) {
 				case 'a':
-					p = sin(p);
+					p = sinl(p);
 					break;
 				case 'b':
-					p = cos(p);
+					p = cosl(p);
 					break;
 			}
+			/*convert long double to string */
 			i = 0;
 			if(p < 0) {
 				t.sign = 1;
@@ -1121,46 +1154,42 @@ num solve(char op, num x, num y) {
 			}
 			while(i < 6) {
 				t.ad[i] = 48 + (int)(p * 10);
-				p = (p * 10) -(int)(p * 10);
+				p = (p * 10) - (int)(p * 10);
 				i++;
 			}
-			t.ad[i] = '\0';
-			t.ai = 6;
 			t.bd[0] = '\0';
 			t.bi = 0;
+			t.ad[i] = '\0';
+			t.ai = 6;
 			free(x.bd);
 			free(x.ad);
 			return t;
 			break;
-		case 'c': case 'd': case 'e': case 'f':
+		case 'c': case 'd': case 'e': case 'f':		/*tan, cot, sec, cosec*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
+			ope = 1;
 			if(x.bi > 38) {
 				t = getpi(t);
 				while(x.bi > 38) {
-					x = sub(t, x);
+					x = sub(t, x, ope, pwr);
 					x = rmz(x);
 				}
-				t.bi = 1;
-				t.bd[0] = 1;
-				t.bd[1] = '\0';
 			}
+			ope = 0;
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
 			switch(op) {
 				case 'c':
-					p = tan(p);
+					p = tanl(p);
 					break;
 				case 'd':
-					p = 1 / tan(p);
+					p = 1 / tanl(p);
 					break;
 				case 'e':
-					p = 1 / cos(p);
+					p = 1 / cosl(p);
 					break;
 				case 'f':
-					p = 1 / sin(p);
+					p = 1 / sinl(p);
 					break;
 			}
 			i = 0;
@@ -1192,11 +1221,13 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
-		case 'g': case 'h': case 'i':
+		case 'g': case 'h': case 'i':				/*log, ln, e^*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
+			if(x.bi > 38) {
+				printf("number is too big");
+				*error = 1;
+				return x;
+			}
 			strcat(str, x.ad);
 			p = atof(x.bd) + atof(str);
 			if(op == 'g')
@@ -1234,14 +1265,16 @@ num solve(char op, num x, num y) {
 			free(x.bd);
 			return t;
 			break;
-		case 'j': case 'k':
+		case 'j': case 'k':					/*squareroot, cuberoot*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			if(x.sign == 1 && op == 'j') {
-				error = 1;
+				*error = 1;
 				printf("squareroot of negative number is not real\n");
+				return x;
+			}
+			if(x.bi > 38) {
+				printf("number is too big");
+				*error = 1;
 				return x;
 			}
 			strcat(str, x.ad);
@@ -1279,7 +1312,7 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
-		case 'l': case 'm':
+		case 'l': case 'm':					/* && and || */
 			t = initnum(t);
 			t.bi = 1;
 			t.bd[0] = '1';
@@ -1288,6 +1321,7 @@ num solve(char op, num x, num y) {
 			x = rmza(x);
 			y = rmz(y);
 			y = rmza(y);
+			/*if no. of digits are > 0 then true*/
 			if(op == 'l') {
 				if(!((x.ai + x.bi) && (y.ai + y.bi)))
 					t.bd[0] = '0';
@@ -1299,16 +1333,18 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
-		case 'n': case 'p':
+		case 'n': case 'p':			/*> and >=*/
 			t = initnum(t);
 			t.bi = 1;
 			t.bd[0] = '1';
 			t.bd[1] = '\0';
 			x = rmz(x);
 			y = rmz(y);
+			/*if no. of digits are different then return 0*/
 			if(x.bi > y.bi)
 				t.bd[0] = '0';
 			else if(x.bi == y.bi) {
+				/*check digit by digit*/
 				while(i < x.bi) {
 					if(x.bd[i] > y.bd[i]) {
 						flag = 2;
@@ -1343,7 +1379,7 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
-		case 'o': case 'q':
+		case 'o': case 'q':				/*< and <=*/
 			t = initnum(t);
 			t.bi = 1;
 			t.bd[0] = '1';
@@ -1387,9 +1423,9 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
-		case 'r':
+		case 'r':						/* = */
 			if(y.var == 0)
-				error = 1;
+				*error = 1;
 			else {
 				if(y.v >= 'a' && y.v <= 'z') {
 					strcpy(variable[y.v - 'a'].bd, x.bd);
@@ -1409,10 +1445,12 @@ num solve(char op, num x, num y) {
 					variable[y.v - 'G' + 26].alimit = x.alimit;
 					variable[y.v - 'G' + 26].blimit = x.blimit;
 				}
+				else
+					*error = 1;
 			}
-			return x;// '=' optr
+			return x;
 			break;
-		case 's': case 't':
+		case 's': case 't':				/* == and !*/
 			t = initnum(t);
 			t.bi = 1;
 			t.bd[0] = '1';
@@ -1450,7 +1488,7 @@ num solve(char op, num x, num y) {
 			free(x.ad);
 			return t;
 			break;
-		case 'u':case 'v':
+		case 'u':case 'v':			/*floor and ceiling*/
 			t = initnum(t);
 			t.bi = 1;
 			t.bd[0] = '1';
@@ -1462,34 +1500,31 @@ num solve(char op, num x, num y) {
 					op = 'u';
 			}
 			if(op == 'v' && x.ai != 0)
-				x = add(x, t);
+				x = add(x, t, ope, pwr);
 			x.ai = 0;
 			x.ad[0] = '\0';
 			return x;
 			break;
-		case 'A':
+		case 'A':					/*bo*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			i = x.bi % 3;
 			if(i)
 				x = adz(x, 3 - i);
 			i = 0;
+			t = adz(t, x.bi / 3);
 			while(i < x.bi) {
-				t.bd[i / 3] = 48;
 				if(x.bd[i] == '1')
 					t.bd[i / 3] += 4;
 				else if(x.bd[i] != '0')
-					error = 1;
+					*error = 1;
 				if(x.bd[i + 1] == '1')
 					t.bd[i / 3] += 2;
 				else if(x.bd[i + 1] != '0')
-					error = 1;
+					*error = 1;
 				if(x.bd[i + 2] == '1')
 					t.bd[i / 3] += 1;
 				else if(x.bd[i + 2] != '0')
-					error = 1;
+					*error = 1;
 				i += 3;
 			}
 			t.bd[i / 3] = '\0';
@@ -1499,20 +1534,20 @@ num solve(char op, num x, num y) {
 				if(i)
 					x = adza(x, 3 - i);
 				i = 0;
+				t = adza(t, x.ai / 3);
 				while(i < x.ai) {
-					t.ad[i / 3] = 48;
 					if(x.ad[i] == '1')
 						t.ad[i / 3] += 4;
 					else if(x.ad[i] != '0')
-						error = 1;
+						*error = 1;
 					if(x.ad[i + 1] == '1')
 						t.ad[i / 3] += 2;
 					else if(x.ad[i + 1] != '0')
-						error = 1;
+						*error = 1;
 					if(x.ad[i + 2] == '1')
 						t.ad[i / 3] += 1;
 					else if(x.ad[i + 2] != '0')
-						error = 1;
+						*error = 1;
 					i += 3;
 				}
 				t.ad[i / 3] = '\0';
@@ -1520,35 +1555,32 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*bo*/
+			return t;
 			break;
-		case 'C':
+		case 'C':					/*bh*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			i = x.bi % 4;
 			if(i)
 				x = adz(x, 4 - i);
 			i = 0;
+			t = adz(t, x.bi / 4);
 			while(i < x.bi) {
-				t.bd[i / 4] = 48;
 				if(x.bd[i] == '1')
 					t.bd[i / 4] += 8;
 				else if(x.bd[i] != '0')
-					error = 1;
+					*error = 1;
 				if(x.bd[i + 1] == '1')
 					t.bd[i / 4] += 4;
 				else if(x.bd[i + 1] != '0')
-					error = 1;
+					*error = 1;
 				if(x.bd[i + 2] == '1')
 					t.bd[i / 4] += 2;
 				else if(x.bd[i + 2] != '0')
-					error = 1;
+					*error = 1;
 				if(x.bd[i + 3] == '1')
 					t.bd[i / 4] += 1;
 				else if(x.bd[i + 3] != '0')
-					error = 1;
+					*error = 1;
 				if(t.bd[i / 4] > '9')
 					t.bd[i / 4] += 7;
 				i += 4;
@@ -1560,24 +1592,24 @@ num solve(char op, num x, num y) {
 				if(i)
 					x = adza(x, 4 - i);
 				i = 0;
+				t = adza(t, x.ai / 4);
 				while(i < x.ai) {
-					t.ad[i / 4] = 48;
 					if(x.ad[i] == '1')
 						t.ad[i / 4] += 8;
 					else if(x.ad[i] != '0')
-						error = 1;
+						*error = 1;
 					if(x.ad[i + 1] == '1')
 						t.ad[i / 4] += 4;
 					else if(x.ad[i + 1] != '0')
-						error = 1;
+						*error = 1;
 					if(x.ad[i + 2] == '1')
 						t.ad[i / 4] += 2;
 					else if(x.ad[i + 2] != '0')
-						error = 1;
+						*error = 1;
 					if(x.ad[i + 3] == '1')
 						t.ad[i / 4] += 1;
 					else if(x.ad[i + 3] != '0')
-						error = 1;
+						*error = 1;
 					if(t.ad[i / 4] > '9')
 						t.ad[i / 4] += 7;
 					i += 4;
@@ -1587,13 +1619,13 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*bh*/
+			return t;
 			break;
-		case 'D':
+		case 'D':					/*ob*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
+			/*if x.bi*3 > default no. of digits limit then adz will reinitiate*/
+			t = adz(t, x.bi * 3);
+			/*as we're using strcat 1st char  must be '\0'*/
 			t.bd[0] = '\0';
 			while(i < x.bi) {
 				switch(x.bd[i]) {
@@ -1622,7 +1654,7 @@ num solve(char op, num x, num y) {
 						strcat(t.bd, "111");
 						break;
 					default :
-						error = 1;
+						*error = 1;
 						return x;
 						break;
 				}
@@ -1630,6 +1662,7 @@ num solve(char op, num x, num y) {
 			}
 			t.bi = 3 * x.bi;
 			if(lflag == 1) {
+				t = adza(t, x.ai * 3);
 				t.ad[0] = '\0';
 				while(i < x.ai) {
 					switch(x.ad[i]) {
@@ -1640,7 +1673,7 @@ num solve(char op, num x, num y) {
 							strcat(t.ad, "001");
 							break;
 						case '2':
-						strcat(t.ad, "010");
+							strcat(t.ad, "010");
 							break;
 						case '3':
 							strcat(t.ad, "011");
@@ -1658,7 +1691,7 @@ num solve(char op, num x, num y) {
 							strcat(t.ad, "111");
 							break;
 						default :
-							error = 1;
+							*error = 1;
 							return x;
 							break;
 					}
@@ -1668,13 +1701,10 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*ob*/
+			return t;
 			break;
-		case 'E':case 'B':
+		case 'E':case 'B':				/*bd and od*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			if(op == 'B')
 				j = 2;
 			else
@@ -1683,7 +1713,7 @@ num solve(char op, num x, num y) {
 				if(x.bd[i] >= '0' && x.bd[i] < ('0' + j))
 					p += ((pow(j, x.bi - i - 1)) * (x.bd[i] - 48));
 				else {
-					error = 1;
+					*error = 1;
 					return x;
 				}
 				i++;
@@ -1694,7 +1724,7 @@ num solve(char op, num x, num y) {
 					if(x.ad[i] >= '0' && x.ad[i] <= ('0' + j))
 						p += ((pow(j, -(1 + i))) * (x.ad[i] - 48));
 					else {
-						error = 1;
+						*error = 1;
 						return x;
 					}
 					i++;
@@ -1723,18 +1753,15 @@ num solve(char op, num x, num y) {
 			t.ad[i] = '\0';
 			free(x.bd);
 			free(x.ad);
-			return t;/*od & bd*/
+			return t;
 			break;
-		case 'F':
-			x = solve('D', x, x);
-			x = solve('C', x, x);
-			return x;/*oh*/
+		case 'F':					/*oh*/
+			x = solve('D', x, x, lflag, error);
+			x = solve('C', x, x, lflag, error);
+			return x;
 			break;
-		case 'G':
+		case 'G':					/*db*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			p = atof(x.bd);
 			while(p) {
 				t.bd[i] = ((int)p % 2) + 48;
@@ -1755,13 +1782,10 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*db*/
+			return t;
 			break;
-		case 'H':
+		case 'H':					/*do*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			p = atof(x.bd);
 			while(p) {
 				t.bd[i] = ((int)p % 8) + 48;
@@ -1782,13 +1806,10 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*do*/
+			return t;
 			break;
-		case 'I':
+		case 'I':					/*dh*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			p = atof(x.bd);
 			while(p) {
 				t.bd[i] = ((int)p % 16) + 48;
@@ -1811,13 +1832,11 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*dh*/
+			return t;
 			break;
-		case 'J':
+		case 'J':						/*hb*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
+			t = adz(t, x.bi * 4);
 			t.bd[0] = '\0';
 			while(i < x.bi) {
 				switch(x.bd[i]) {
@@ -1870,13 +1889,14 @@ num solve(char op, num x, num y) {
 						strcat(t.bd, "1111");
 						break;
 					default :
-						error = 1;
+						*error = 1;
 						break;
 				}
 				i++;
 			}
 			t.bi = 4 * x.bi;
 			if(lflag == 1) {
+				t = adza(t, x.ai * 4);
 				t.ad[0] = '\0';
 				while(i < x.ai) {
 					switch(x.bd[i]) {
@@ -1929,7 +1949,7 @@ num solve(char op, num x, num y) {
 							strcat(t.ad, "1111");
 							break;
 						default :
-							error = 1;
+							*error = 1;
 							break;
 					}
 				i++;
@@ -1938,25 +1958,22 @@ num solve(char op, num x, num y) {
 			}
 			free(x.bd);
 			free(x.ad);
-			return t;/*hb*/
+			return t;
 			break;
-		case 'K':
-			x = solve('J', x, x);
-			x = solve('A', x, x);
-			return x;/*ho*/
+		case 'K':					/*ho*/
+			x = solve('J', x, x, lflag, error);
+			x = solve('A', x, x, lflag, error);
+			return x;
 			break;
-		case 'L':
+		case 'L':					/*hd*/
 			t = initnum(t);
-			t.bi = 1;
-			t.bd[0] = '1';
-			t.bd[1] = '\0';
 			while(i < x.bi) {
 				if(x.bd[i] >= '0' && x.bd[i] <= '9')
 					p += ((pow(16, x.bi - i - 1)) * (x.bd[i] - 48));
 				else if(x.bd[i] >= 'A' && x.bd[i] <= 'F')
 					p += ((pow(16, x.bi - i - 1)) * (x.bd[i] - 'A' + 10));
 				else {
-					error = 1;
+					*error = 1;
 					return x;
 				}
 				i++;
@@ -1969,7 +1986,7 @@ num solve(char op, num x, num y) {
 					else if(x.ad[i] >= 'A' && x.ad[i] <= 'F')
 						p += ((pow(16, -(1 + i))) * (x.ad[i] - 'A' + 10));
 					else {
-						error = 1;
+						*error = 1;
 						return x;
 					}
 					i++;
@@ -1998,41 +2015,35 @@ num solve(char op, num x, num y) {
 			t.ad[i] = '\0';
 			free(x.bd);
 			free(x.ad);
-			return t;/*hd*/
+			return t;
 			break;
-		case 'M':
-			return x;/*++*/
-			break;
-		case 'N':
-			return x;/*--*/
-			break;
-		case 'O': case 'P': case 'Q': case 'R':
+		case 'O': case 'P': case 'Q': case 'R':		/* +=, -=, *=, /= */
 			if(y.var == 0) {
-				error = 1;
+				*error = 1;
 				return y;
 			}
 			c = y.v;
 			switch(op) {
 				case 'O':
-					y = add(x, y);
+					y = add(x, y, ope, pwr);
 					break;
 				case 'P':
-					y = sub(x, y);
+					y = sub(x, y, ope, pwr);
 					break;
 				case 'Q':
-					y = mul(x, y);
+					y = mul(x, y, pwr);
 					break;
 				case 'R':
 					x = rmz(x);
 					if(x.bi == 0 && x.ai == 0) {
 						printf("division by 0 \n");
-						error = 1;
+						*error = 1;
 						free(x.bd);
 						free(x.ad);
 						return y;
 					}
 					else
-						y = divi(x, y);
+						y = divi(x, y, lflag, ope, pwr);
 					break;
 			}
 			if(c >= 'a' && c <= 'z') {
@@ -2053,11 +2064,13 @@ num solve(char op, num x, num y) {
 				variable[c - 'G' + 26].alimit = y.alimit;
 				variable[c - 'G' + 26].blimit = y.blimit;
 			}
+			else
+				*error = 1;
 			return y;
 			break;
-		case 'S': case 'U':
+		case 'S': case 'U':				/* ++ pre and post */
 			if(y.var != 1) {
-				error = 1;
+				*error = 1;
 				return y;
 			}
 			t = initnum(t);
@@ -2066,7 +2079,7 @@ num solve(char op, num x, num y) {
 			t.bd[1] = '\0';
 			c = y.v;
 			ope = 1;
-			y = add(y, t);
+			y = add(y, t, ope, pwr);
 			if(c >= 'a' && c <= 'z') {
 				strcpy(variable[c - 'a'].bd, y.bd);
 				variable[c - 'a'].bi = y.bi;
@@ -2085,14 +2098,16 @@ num solve(char op, num x, num y) {
 				variable[c - 'G' + 26].alimit = y.alimit;
 				variable[c - 'G' + 26].blimit = y.blimit;
 			}
+			else
+				*error = 1;
 			ope = 0;
 			if(op == 'U')
-				y = sub(t, y);
+				y = sub(t, y, ope, pwr);
 			return y;
 			break;
-		case 'T': case'V':
+		case 'T': case'V':				/* -- pre and post */
 			if(y.var != 1) {
-				error = 1;
+				*error = 1;
 				return y;
 			}
 			t = initnum(t);
@@ -2101,7 +2116,7 @@ num solve(char op, num x, num y) {
 			t.bd[1] = '\0';
 			c = y.v;
 			ope = 1;
-			y = sub(t, y);
+			y = sub(t, y, ope, pwr);
 			if(c >= 'a' && c <= 'z') {
 				strcpy(variable[c - 'a'].bd, y.bd);
 				variable[c - 'a'].bi = y.bi;
@@ -2120,13 +2135,15 @@ num solve(char op, num x, num y) {
 				variable[c - 'G' + 26].alimit = y.alimit;
 				variable[c - 'G' + 26].blimit = y.blimit;
 			}
+			else
+				*error = 1;
 			ope = 0;
 			if(op == 'V')
-				y = add(t, y);
+				y = add(t, y, ope, pwr);
 			return y;
 			break;
 		default:
-			error = 1;
+			*error = 1;
 			return x;
 			break;				
 	}
@@ -2141,7 +2158,7 @@ char ctop(stackc *b) {
 }
 
 
-num infixeval(char *str) {
+num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 	token *t;
 	num result, x, y;
 	y = initnum(y);
@@ -2154,18 +2171,17 @@ num infixeval(char *str) {
 	char optr;
 	int reset = 1, h = 0, p, q;
 	while(1) {
-		t = getnext(str, &reset);
-		if(error == 1)
-			return x;
-		if(t->type == ERR)
+		t = getnext(str, &reset, lflag, dflag);
+		if(*error == 1)
 			return x;
 		curtok = t->type;
+		/*if there are two consecutive operators*/
 		if(curtok == pretok && pretok == OPERAND && t->op != '(' && t->op != ')') {
-			error = 1;
+			*error = 1;
 			return x;
 		}
 		if((curtok == pretok || emptyi(&a)) && t->op == '-') {		/*if int_stack is empty then '-' is 1st char of string*/
-			if(!fulli(&a)) {
+			if(!fulli(&a) && !fullc(&b)) {
 				x.bd[0] = '1';
 				x.bi = 1;
 				x.ad[0] = '\0';
@@ -2175,29 +2191,23 @@ num infixeval(char *str) {
 				pushi(&a, x);
 			}
 			else {
-				error = 1;
-				stackfull = 1;
-				return x;
-			}
-			if(!fullc(&b))
-				pushc(&b, '*');
-			else {
-				error = 1;
-				stackfull = 1;
+				*error = 1;
+				*stackfull = 1;
 				return x;
 			}
 			continue;
 		}
+		/*if no. of opening and closing brackets don't match*/
 		if(t->type == END && h != 0) {
-			error = 1;
+			*error = 1;
 			return x;
 		}
 		if(t->type == OPERAND) {
 			if(!fulli(&a))
 				pushi(&a, t->number);
 			else {
-				error = 1;
-				stackfull = 1;
+				*error = 1;
+				*stackfull = 1;
 				return x;
 			}
 		}
@@ -2209,7 +2219,7 @@ num infixeval(char *str) {
 				case ')':
 					h--;
 					break;
-				case 'M':case 'N':
+				case 'M':case 'N':		/*to determine ++ or -- is pre or post operator*/
 					t->op += 'S' - 'M'; 
 					if(pretok == OPERAND)
 						(t->op) += 2;
@@ -2217,22 +2227,22 @@ num infixeval(char *str) {
 			}
 			if(!emptyc(&b)) {
 				optr = ctop(&b);
-				if(t->op == 'r') {
-					error = 1;
+				if(t->op == 'r') {		/*there shouldn't be any operator before '=' */
+					*error = 1;
 					return x;
 				}
 				p = precedence(optr);
 				q = precedence(t->op);
 				if(p == -2 || q == -2) {
-					error = 1;
+					*error = 1;
 					return x;
 				}
 				if(q > p) {
 					if(!fullc(&b))	
 						pushc(&b, t->op);
 					else {
-						error = 1;
-						stackfull = 1;
+						*error = 1;
+						*stackfull = 1;
 						return x;
 					}
 				} 	
@@ -2250,14 +2260,14 @@ num infixeval(char *str) {
 						        optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
 						        optr == 'J' || optr == 'K' || optr == 'L' || optr == 'T' ||
 							optr == 'S' || optr == 'u' || optr == 'v' || optr == 'U' ||
-							optr == 'V') {
+							optr == 'V') {		/*unary operators*/
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
-								error = 1;
+								*error = 1;
 								return x;						
 							}
-							result = solve(optr, x, x);
+							result = solve(optr, x, x, lflag, error);
 							pushi(&a, result);
 							if(!emptyc(&b)) {
 								optr = ctop(&b);
@@ -2266,20 +2276,20 @@ num infixeval(char *str) {
 							else
 								break;
 						}
-						else{
+						else {				/*binary operators*/
 							if(!emptyi(&a))
 								x = popi(&a);
 							else {
-								error = 1;
+								*error = 1;
 								return x;
 							}
 							if(!emptyi(&a))
 								y = popi(&a);
 							else {
-								error = 1;
+								*error = 1;
 								return x;
 							}
-							result = solve(optr, x, y);
+							result = solve(optr, x, y, lflag, error);
 							pushi(&a, result);
 							if(!emptyc(&b)) {
 								optr = ctop(&b);
@@ -2310,30 +2320,30 @@ num infixeval(char *str) {
 					   optr == 'F' || optr == 'G' || optr == 'H' || optr == 'I' || 
 					   optr == 'J' || optr == 'K' || optr == 'L' || optr == 'S' ||
 					   optr == 'T' || optr == 'u' || optr == 'v' || optr == 'U' ||
-					   optr == 'V') {
+					   optr == 'V') {			/*unary operators*/
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
-							error = 1;
+							*error = 1;
 							return x;
 						}
-						result = solve(optr, x, x);
+						result = solve(optr, x, x, lflag, error);
 						pushi(&a, result);
 					}
-					else {
+					else {					/*binary operators*/
 						if(!emptyi(&a))
 							x = popi(&a);
 						else {
-							error = 1;
+							*error = 1;
 							return x;
 						}
 						if(!emptyi(&a))
 							y = popi(&a);
 						else {
-							error = 1;
+							*error = 1;
 							return x;
 						}
-						result = solve(optr, x, y);
+						result = solve(optr, x, y, lflag, error);
 						pushi(&a, result);
 					}
 				}
@@ -2342,7 +2352,7 @@ num infixeval(char *str) {
 			else {
 				x = popi(&a);		/*no need to check if int_stack is empty because there has to be a number*/	
 				if(!emptyi(&a)) {
-					error = 1;
+					*error = 1;
 					return x;
 				}
 				else 
@@ -2350,7 +2360,7 @@ num infixeval(char *str) {
 			}
 		} 
 		else if (t->type == ERROR) {
-			error = 1;
+			*error = 1;
 			return x; 
 		}
 		pretok = curtok;
@@ -2358,9 +2368,10 @@ num infixeval(char *str) {
 	free(t);
 }
 
-void printans(num ans) {
+void printans(num ans, int lflag, int dflag, int error, int stackfull) {
 	if(ans.var == 1) {
 		ans.var = 0;
+		/*if number is a varible then get its value stored in variable array*/
 		if(ans.v >= 'a' && ans.v <= 'z') {
 			strcpy(ans.bd, variable[ans.v - 'a'].bd);
 			ans.bi = variable[ans.v - 'a'].bi;
@@ -2392,6 +2403,8 @@ void printans(num ans) {
 		error = 0;
 	}
 	else {
+		ans = rmz(ans);
+		ans = rmza(ans);
 		if(ans.sign == 1) 
 			printf("-");
 		if(ans.bi == 0)
@@ -2413,17 +2426,17 @@ void printusage() {
 	printf("usage:  ./project  [option] [filename]\n\noption\tdescription\n-l    \ttrigonometric, log, ln and e^(expression) options\n-h    \thelp and exit\n--help\thelp and exit\n");
 }
 
-int main(int argc,char *argv[]) {
+int main(int argc, char *argv[]) {
 	char str[128], *o;
 	o = &str[0];
 	int q = 1;
 	initvar();
 	num ans;
-	int x;
+	int x, lflag = 0, dflag = 0, error = 0, stackfull = 0;
 	size_t b = 128;
 	ssize_t z;
 	FILE *fp;
-	num infixeval(char *infix);
+	num infixeval(char *infix, int lflag, int *dflag, int *error, int *stackfull);
 	while(q < argc) {
 		if((strcmp(argv[q], "-h") == 0) || (strcmp(argv[q], "--help") == 0)) {
 			printusage();
@@ -2446,16 +2459,16 @@ int main(int argc,char *argv[]) {
 			}
 			while((z = getline(&o, &b, fp)) != -1) {
 				str[strlen(str) - 1] = '\0';
-				ans = infixeval(str);
-				printans(ans);
+				ans = infixeval(str, lflag, &dflag, &error, &stackfull);
+				printans(ans, lflag, dflag, error, stackfull);
 			}
 			fclose(fp);
 		}
 		q++;
 	}
 	while(printf("> ") && (x = readline(str, 128))) {
-		ans = infixeval(str);
-		printans(ans);
+		ans = infixeval(str, lflag, &dflag, &error, &stackfull);
+		printans(ans, lflag, dflag, error, stackfull);
 	}
 	for(x = 0;x < 46; x++) {
 		free((variable)[x].bd);
