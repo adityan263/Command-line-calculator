@@ -24,8 +24,8 @@ DESCRIPTION :
   	     order. It evaluates each file in the order they are provided as argum-
   	     ents.
   	     
-  	   **You MUST put a space between a brackets and other operator or between
-  	     two brackets.
+  	   **You MUST put a space between a bracket and an operator &  between two
+  	     brackets.
   	     
   	     Following operations can be performed by this program :
   	     
