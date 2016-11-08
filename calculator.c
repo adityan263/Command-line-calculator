@@ -824,6 +824,9 @@ num divi(num x, num y, int lflag, int ope, int pwr) {
 	q = initnum(q);/*quotient*/
 	r = initnum(r);/*remainder*/
 	b = initnum(b);
+	q = adz(q, y.bi);
+	r = adz(r, x.bi);
+	b = adz(b, x.bi);
 	strcat(x.bd, x.ad);
 	strcat(y.bd, y.ad);
 	if(x.sign == y.sign)
@@ -915,6 +918,8 @@ num mod(num x, num y, int ope, int pwr) {
 	num r, b;
 	r = initnum(r);
 	b = initnum(b);
+	r = adz(r, x.bi);
+	b = adz(b, x.bi);
 	int i = 0, j, k;
 	/*same as division just returns different number*/
 	if(x.ai > y.ai) {
@@ -2194,11 +2199,11 @@ num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 			return x;
 		curtok = t->type;
 		/*if there are two consecutive operators*/
-		if(curtok == pretok && t->op != '-' && t->op != '(' && t->op != ')') {
+/*		if(curtok == pretok && t->op != '-' && t->op != '(' && t->op != ')') {
 			*error = 1;
 			return x;
 		}
-		if((curtok == pretok || emptyi(&a)) && t->op == '-') {		/*if int_stack is empty then '-' is 1st char of string*/
+*/		if((curtok == pretok || emptyi(&a)) && t->op == '-') {		/*if int_stack is empty then '-' is 1st char of string*/
 			if(!fulli(&a) && !fullc(&b)) {
 				x.bd[0] = '1';
 				x.bi = 1;
@@ -2445,7 +2450,6 @@ void printusage() {
 
 int main(int argc, char *argv[]) {
 	char str[128], *o;
-	o = &str[0];
 	int q = 1;
 	initvar();
 	num ans;
