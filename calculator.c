@@ -33,10 +33,10 @@
 
 
 /*reads line from the terminal and converts it to a string*/
-int readline(char *arr, int len) {
+int readline(char *arr) {
 	int i = 0;
 	int ch;
-	while((ch = getchar()) != '\n' && i < len - 1) {
+	while((ch = getchar()) != '\n') {
 		arr[i] = ch;
 		i++;
 	}
@@ -82,7 +82,7 @@ token *getnext(char *arr, int *reset, int lflag, int *dflag) {
 	a = initnum(a);
 	char operator(char*, int);
 	int x, y;
-	char *expre, *opr;
+	char *expre, *opr, delim[2] = "()", *tmp;
 	static char optr = '\0';
 	token *t = (token *)malloc(sizeof(token));
 	if(currstate == ALPH) {
@@ -91,17 +91,13 @@ token *getnext(char *arr, int *reset, int lflag, int *dflag) {
 		*(expre + x) = arr[i - 1];
 		x++;
 	}
-	if(currstate == OPR) {
+	else if(currstate == OPR) {
 		opr = (char *)malloc(sizeof(char) * 4);
 		y = 0;
 		*(opr + y) = arr[i - 1];
 		y++;
 	}
-	if(arr[i - 1] == '.') {
-		*dflag = 1;
-		d1flag = 1;
-	}
-	if(currstate == DIG) {
+	else if(currstate == DIG) {
 		if(d1flag == 1) {
 			a.ad[a.ai] = arr[i - 1];
 			a.ai++;
@@ -111,7 +107,10 @@ token *getnext(char *arr, int *reset, int lflag, int *dflag) {
 			a.bi++;
 		}
 	}
-	
+	if(arr[i - 1] == '.') {
+		*dflag = 1;
+		d1flag = 1;
+	}
 	while(1) {
 		switch(arr[i]) {
 			case '0': case '1': case '2': case '3':
@@ -254,6 +253,23 @@ token *getnext(char *arr, int *reset, int lflag, int *dflag) {
 					t->op = operator(opr, lflag);
 					optr = t->op;
 					if(t->op == '1') {
+						if(opr[0] == '(' || opr[0] == ')') {
+							optr = t->op = opr[0];	
+							currstate = OPR;
+							i = i - strlen(opr) + 2;
+							free(opr);
+							return t;
+						}
+						else {
+							y = strlen(opr);
+							tmp = strtok(opr, delim);
+							t->op = operator(tmp, lflag);
+							optr = t->op;
+							currstate = OPR;
+							i = i - y + strlen(tmp) + 1;
+							free(opr);
+							return t;
+						}
 						t->type = ERROR;
 					}
 					free(opr);
@@ -426,44 +442,7 @@ num mod(num, num, int, int);
 /*returns variable of n * pi i.e. (3.14 * 10 ^ 37)*/
 num getpi(num t) {
 	t = breinitnum(t);
-	t.bd[0] = '3';
-	t.bd[1] = '1';
-	t.bd[2] = '4';
-	t.bd[3] = '1';
-	t.bd[4] = '5';
-	t.bd[5] = '9';
-	t.bd[6] = '2';
-	t.bd[7] = '6';
-	t.bd[8] = '5';
-	t.bd[9] = '3';
-	t.bd[10] = '5';
-	t.bd[11] = '8';
-	t.bd[12] = '9';
-	t.bd[13] = '7';
-	t.bd[14] = '9';
-	t.bd[15] = '3';
-	t.bd[16] = '2';
-	t.bd[17] = '3';
-	t.bd[18] = '8';
-	t.bd[19] = '4';
-	t.bd[20] = '6';
-	t.bd[21] = '2';
-	t.bd[22] = '6';
-	t.bd[23] = '4';
-	t.bd[24] = '3';
-	t.bd[25] = '3';
-	t.bd[26] = '8';
-	t.bd[27] = '3';
-	t.bd[28] = '2';
-	t.bd[29] = '7';
-	t.bd[30] = '9';
-	t.bd[31] = '5';
-	t.bd[32] = '0';
-	t.bd[33] = '2';
-	t.bd[34] = '8';
-	t.bd[35] = '8';
-	t.bd[36] = '4';
-	t.bd[37] = '1';
+	t.bd = "31415926535897932384626433832795028841";
 	t.bd[38] = '\0';
 	t.bi = 38;
 	return t;
@@ -610,7 +589,6 @@ num add(num x, num y, int ope, int pwr) {
 		}
 		i--;
 	}
-	
 	if(flag == 1) {
 		res.bd[i + 1] = '1';
 		flag = 0;
@@ -2198,12 +2176,12 @@ num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull) {
 		if(*error == 1)
 			return x;
 		curtok = t->type;
-		/*if there are two consecutive operators*/
-/*		if(curtok == pretok && t->op != '-' && t->op != '(' && t->op != ')') {
+		/*if there are two consecutive operands...to avoid cases like "5 2 +"*/
+		if(curtok == OPERAND && pretok == OPERAND) {
 			*error = 1;
 			return x;
 		}
-*/		if((curtok == pretok || emptyi(&a)) && t->op == '-') {		/*if int_stack is empty then '-' is 1st char of string*/
+		if((curtok == pretok || emptyi(&a)) && t->op == '-') {		/*if int_stack is empty then '-' is 1st char of string*/
 			if(!fulli(&a) && !fullc(&b)) {
 				x.bd[0] = '1';
 				x.bi = 1;
@@ -2449,7 +2427,7 @@ void printusage() {
 }
 
 int main(int argc, char *argv[]) {
-	char str[128], *o;
+	char str[500], *o;
 	int q = 1;
 	initvar();
 	num ans;
@@ -2488,7 +2466,7 @@ int main(int argc, char *argv[]) {
 		}
 		q++;
 	}
-	while(printf("\n> ") && (x = readline(str, 128))) {
+	while(printf("\n> ") && (x = readline(str))) {
 		ans = infixeval(str, lflag, &dflag, &error, &stackfull);
 		printans(ans, lflag, dflag, error, stackfull);
 		error = 0;
