@@ -15,7 +15,7 @@ OPTIONS :
 		
 DESCRIPTION :
 		This is a command line calculator which supports arbitrary precisi-
-	     on numbers. One expression can have at the most 128 operaotors and 128 
+	     on numbers . One expression can have at the most 128 operators and 128 
 	     operands. It reads from the standard input. All operations are execut-
 	     ed according to their precedence.
   	     
@@ -24,14 +24,11 @@ DESCRIPTION :
   	     order. It evaluates each file in the order they are provided as argum-
   	     ents.
   	     
-  	   **You MUST put a space between a bracket and an operator &  between two
-  	     brackets.
-  	     
   	     Following operations can be performed by this program :
   	     
   	     addition(+), subtraction(-), multiplication(*),division(/), modulus(%)
   	     ,exponent(^), equalto(==), greater than(>), greater than equal to(>=),
-  	     smaller than(<), smaller than equal to(>=),
+  	     less than(<), less than equal to(>=),
   	     
   	     logical AND(&&), logical OR(||), logical NOT(!) 
   	     
