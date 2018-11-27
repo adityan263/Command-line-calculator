@@ -1,10 +1,14 @@
 FLAGS = -Wall -O3 
 
-SRC = .
+SRC = src
 
 SOURCES=$(SRC)/numbers.c \
 	$(SRC)/stack.c \
-	$(SRC)/calculator.c 
+	$(SRC)/input.c \
+	$(SRC)/print.c \
+	$(SRC)/evaluate.c \
+	$(SRC)/basic_operations.c \
+	$(SRC)/main.c 
 
 OBJECTS = $(SOURCES:.c=.o)
 

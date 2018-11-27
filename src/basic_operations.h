@@ -17,47 +17,33 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#ifndef __STACK_H__
-#include "stack.h"
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+
+#define __BASIC_OPERATIONS_H__
+
+#ifndef __NUMBERS_H__
+#include "numbers.h"
 #endif
 
 
-void pushi(stacki *s, num numb) {
-	s->a[s->i]= numb;
-	(s->i)++;
-}
-num popi(stacki *s) {
-	num t;
-	t = s->a[s->i - 1];
-	(s->i)--;
-	return t;
-}
-int emptyi(stacki *s) {
-	return s->i == 0;
-}
-int fulli(stacki *s) {
-	return s->i == MAX;
-}
-void initi(stacki *s) {
-	s->i = 0;
-}
+num add(num, num, int, int);
+
+num sub(num, num, int, int);
+
+num mul(num, num, int);
+
+num divi(num, num, int, int, int);
+
+num mod(num, num, int, int);
 
 
-void pushc(stackc *s, char op) {
-	s->b[s->j]= op;
-	(s->j)++;
-}
-char popc(stackc *s) {
-	char t = s->b[s->j - 1];
-	(s->j)--;
-	return t;
-}
-int emptyc(stackc *s) {
-	return s->j == 0;
-}
-int fullc(stackc *s) {
-	return s->j == MAX;
-}
-void initc(stackc *s) {
-	s->j = 0;
-}
+/*returns variable of n * pi i.e. (3.14 * 10 ^ 37)*/
+num getpi(num t);
+
+
+/*in multiplication sometimes character gets too big (> 255)
+ *to avoid printing unknown characters carry needs to be cleared
+ */
+num carryclr(num res, int k);

@@ -17,23 +17,43 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#define __NUMBERS_H__
+#define __INPUT_H__
 
-/*struct that stores all numbers
- *bd => digits before decimal  are stored
- *ad => digits after decimal are stored
- *v => if it is a varible then it stored variable character else '\0'
- *bi, ai => no. of digits before and after decimal
- *sign = 1 => negative | sign = 0 =>positive
- *blimit, alimit => max no. of digits it can store
- *var = 1 => it is a variable 
+
+#ifndef __NUMBERS_H__
+#include "numbers.h"
+#endif
+
+
+#define OPERAND 10 
+#define OPERATOR 20
+#define VARIABLE 30
+#define	END	40
+#define ERROR	50
+
+typedef struct token {
+	int type;
+	num number;
+	char op;
+}token;
+
+
+enum states { SPC, DIG, OPR, ALPH, STOP, ERR };
+
+
+/*reads line from the terminal and converts it to a string*/
+int readline(char *arr);
+
+
+/*converts string into tokens*/
+token *getnext(char *arr, int *reset, int lflag, int *dflag);
+
+
+/*assigns unique character to each operation
+ *these characters are later used as operator 
  */
-typedef struct num{
-	char *bd, *ad, v;
-	int bi, ai, sign, blimit, alimit, var;
-}num;
+char operator(char *expr, int lflag);
 
 
-num initnum(num n);
-num breinitnum(num n);
-num areinitnum(num n);
+/*returns precedence of operator*/
+int precedence(char b);

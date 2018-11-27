@@ -17,34 +17,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#define __STACK_H__
-#define MAX 128
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <math.h>
+
+#define __PRINT_H__
+
+#ifndef __STACK_H__
+#include "stack.h"
+#endif
+
+#ifndef __NUMBERS_H__
 #include "numbers.h"
+#endif
 
-/*stack of operands*/
-typedef struct stacki {
-	num a[MAX];
-	int i;
-}stacki;
-
-/*integer stack*/
-void pushi(stacki *s, num numb);
-num popi(stacki *s);
-int emptyi(stacki *s);
-int fulli(stacki *s);
-void initi(stacki *s);
+#ifndef __INPUT_H__
+#include "input.h"
+#endif
 
 
+extern num variable[46];
 
-/*stack of operators*/
-typedef struct stackc {
-	char b[MAX];
-	int j;
-}stackc;
+void printans(num ans, int lflag, int dflag, int error, int stackfull);
 
-/*character stack*/
-void pushc(stackc *s, char op);
-char popc(stackc *s);
-int emptyc(stackc *s);
-int fullc(stackc *s);
-void initc(stackc *s);
+void printusage();
