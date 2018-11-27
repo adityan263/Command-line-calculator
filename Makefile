@@ -1,8 +1,18 @@
-project: calculator.o stack.o
-	cc *.o -o project -lm
-stack.o: stack.c stack.h
-	cc -c stack.c stack.h -Wall
-calculator.o: calculator.c
-	cc -c calculator.c -Wall
+FLAGS = -Wall -O3 
+
+SRC = .
+
+SOURCES=$(SRC)/numbers.c \
+	$(SRC)/stack.c \
+	$(SRC)/calculator.c 
+
+OBJECTS = $(SOURCES:.c=.o)
+
+project: $(OBJECTS)
+	gcc $(OBJECTS) -o project -lm
+
+$(OBJECT) : %.o : %.c Makefile
+	gcc -c $< -o $@
+
 clean:
-	rm *.o
+	rm $(SRC)/*.o

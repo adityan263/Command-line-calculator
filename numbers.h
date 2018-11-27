@@ -17,47 +17,23 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#ifndef __STACK_H__
-#include "stack.h"
-#endif
+#define __NUMBERS_H__
+
+/*struct that stores all numbers
+ *bd => digits before decimal  are stored
+ *ad => digits after decimal are stored
+ *v => if it is a varible then it stored variable character else '\0'
+ *bi, ai => no. of digits before and after decimal
+ *sign = 1 => negative | sign = 0 =>positive
+ *blimit, alimit => max no. of digits it can store
+ *var = 1 => it is a variable 
+ */
+typedef struct num{
+	char *bd, *ad, v;
+	int bi, ai, sign, blimit, alimit, var;
+}num;
 
 
-void pushi(stacki *s, num numb) {
-	s->a[s->i]= numb;
-	(s->i)++;
-}
-num popi(stacki *s) {
-	num t;
-	t = s->a[s->i - 1];
-	(s->i)--;
-	return t;
-}
-int emptyi(stacki *s) {
-	return s->i == 0;
-}
-int fulli(stacki *s) {
-	return s->i == MAX;
-}
-void initi(stacki *s) {
-	s->i = 0;
-}
-
-
-void pushc(stackc *s, char op) {
-	s->b[s->j]= op;
-	(s->j)++;
-}
-char popc(stackc *s) {
-	char t = s->b[s->j - 1];
-	(s->j)--;
-	return t;
-}
-int emptyc(stackc *s) {
-	return s->j == 0;
-}
-int fullc(stackc *s) {
-	return s->j == MAX;
-}
-void initc(stackc *s) {
-	s->j = 0;
-}
+num initnum(num n);
+num breinitnum(num n);
+num areinitnum(num n);

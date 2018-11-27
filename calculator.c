@@ -21,8 +21,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "stack.h"
 #include <math.h>
+
+#ifndef __STACK_H__
+#include "stack.h"
+#endif
+
+#ifndef __NUMBERS_H__
+#include "numbers.h"
+#endif
 
 
 #define OPERAND 10 

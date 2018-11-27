@@ -17,21 +17,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#define __STACK_H__
 #define MAX 128
-
-/*struct that stores all numbers
- *bd => digits before decimal  are stored
- *ad => digits after decimal are stored
- *v => if it is a varible then it stored variable character else '\0'
- *bi, ai => no. of digits before and after decimal
- *sign = 1 =>negative | sign = 0 =>positive
- *blimit, alimit => max no. of digits it can store
- *var = 1 =>it is a variable 
- */
-typedef struct num{
-	char *bd, *ad, v;
-	int bi, ai, sign, blimit, alimit, var;
-}num;
+#include "numbers.h"
 
 /*stack of operands*/
 typedef struct stacki {
@@ -39,25 +27,22 @@ typedef struct stacki {
 	int i;
 }stacki;
 
-
-num initnum(num n);
-num breinitnum(num n);
-num areinitnum(num n);
-
-
+/*integer stack*/
 void pushi(stacki *s, num numb);
 num popi(stacki *s);
 int emptyi(stacki *s);
 int fulli(stacki *s);
 void initi(stacki *s);
 
-/*stac of operators*/
+
+
+/*stack of operators*/
 typedef struct stackc {
 	char b[MAX];
 	int j;
 }stackc;
 
-
+/*character stack*/
 void pushc(stackc *s, char op);
 char popc(stackc *s);
 int emptyc(stackc *s);
