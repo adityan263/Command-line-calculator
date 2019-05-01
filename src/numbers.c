@@ -18,9 +18,7 @@
  *****************************************************************************/
 
 #include <stdlib.h>
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
 
 /*set initial value of number to zero and malloc memory for number*/
 num initnum(num p){

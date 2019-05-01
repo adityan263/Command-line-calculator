@@ -22,21 +22,10 @@
 #include <string.h>
 #include <limits.h>
 
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
-
-#ifndef __INPUT_H__
 #include "input.h"
-#endif
-
-#ifndef __EVALUATE_H__
 #include "evaluate.h"
-#endif
-
-#ifndef __PRINT_H__
 #include "print.h"
-#endif
 
 
 

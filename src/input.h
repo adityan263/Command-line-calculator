@@ -17,13 +17,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifndef __INPUT_H__
 #define __INPUT_H__
 
-
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
-
 
 #define OPERAND 10 
 #define OPERATOR 20
@@ -57,3 +54,5 @@ char operator(char *expr, int lflag);
 
 /*returns precedence of operator*/
 int precedence(char b);
+
+#endif

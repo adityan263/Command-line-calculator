@@ -17,16 +17,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-
+#ifndef __BASIC_OPERATIONS_H__
 #define __BASIC_OPERATIONS_H__
 
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
-
 
 num add(num, num, int, int);
 
@@ -47,3 +41,5 @@ num getpi(num t);
  *to avoid printing unknown characters carry needs to be cleared
  */
 num carryclr(num res, int k);
+
+#endif

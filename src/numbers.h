@@ -17,6 +17,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifndef __NUMBERS_H__
 #define __NUMBERS_H__
 
 /*struct that stores all numbers
@@ -66,3 +67,5 @@ num rmz(num t);
  *e.g. adz(15.9800) returns 15.98
  */
 num rmza(num t);
+
+#endif

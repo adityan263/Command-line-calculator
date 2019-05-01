@@ -17,11 +17,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifndef __STACK_H__
 #define __STACK_H__
 #define MAX 128
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
 
 /*stack of operands*/
 typedef struct stacki {
@@ -51,3 +50,5 @@ int  emptyc(stackc *s);
 int  fullc(stackc *s);
 void initc(stackc *s);
 char ctop(stackc *b);
+
+#endif

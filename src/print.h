@@ -17,25 +17,14 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <math.h>
-
+#ifndef __PRINT_H__
 #define __PRINT_H__
 
-#ifndef __STACK_H__
 #include "stack.h"
-#endif
 
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
 
-#ifndef __INPUT_H__
 #include "input.h"
-#endif
 
 
 extern num variable[46];
@@ -43,3 +32,5 @@ extern num variable[46];
 void printans(num ans, int lflag, int dflag, int error, int stackfull);
 
 void printusage();
+
+#endif

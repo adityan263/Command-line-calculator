@@ -17,31 +17,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <math.h>
-
+#ifndef __EVALUATE_H__
 #define __EVALUATE_H__
 
-#ifndef __STACK_H__
 #include "stack.h"
-#endif
-
-#ifndef __NUMBERS_H__
 #include "numbers.h"
-#endif
-
-#ifndef __INPUT_H__
 #include "input.h"
-#endif
-
-#ifndef __BASIC_OPERATIONS_H__
 #include "basic_operations.h"
-#endif
-
-
 
 
 /*46 variables (a to z) and (G to Z)*/
@@ -54,3 +36,5 @@ void initvar();
 num solve(char op, num x, num y, int lflag, int *error);
 
 num infixeval(char *str, int lflag, int *dflag, int *error, int *stackfull);
+
+#endif

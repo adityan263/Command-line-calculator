@@ -19,10 +19,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#ifndef __PRINT_H__
 #include "print.h"
-#endif
 
 
 void printans(num ans, int lflag, int dflag, int error, int stackfull) {

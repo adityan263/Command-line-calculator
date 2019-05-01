@@ -22,9 +22,7 @@
 #include <string.h>
 #include <limits.h>
 
-#ifndef __INPUT_H__
 #include "input.h"
-#endif
 
 
 /*reads line from the terminal and converts it to a string*/

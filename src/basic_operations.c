@@ -18,11 +18,9 @@
  *****************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 
-#ifndef __BASIC_OPERATIONS_H__
 #include "basic_operations.h"
-#endif
-
 
 num add(num x, num y, int ope, int pwr) {
 	if(x.sign != y.sign) {

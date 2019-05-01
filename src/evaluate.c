@@ -23,9 +23,7 @@
 #include <limits.h>
 #include <math.h>
 
-#ifndef __EVALUATE_H__
 #include "evaluate.h"
-#endif
 
 
 
